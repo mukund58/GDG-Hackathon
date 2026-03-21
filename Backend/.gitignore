@@ -1,0 +1,12 @@
+*.db
+Migrations/
+bin/
+obj/
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+appsettings.Local.json
+appsettings.Test.json
+.env
+*.http
+Properties/
