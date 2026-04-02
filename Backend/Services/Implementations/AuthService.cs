@@ -6,6 +6,7 @@ using Backend.Models.DTOs;
 using Backend.Data;
 using Backend.Models.Entities;
 using Backend.Services.Interface;
+using Microsoft.EntityFrameworkCore;
 
 public class AuthService : IAuthService
 {
@@ -33,11 +34,12 @@ public class AuthService : IAuthService
 
     public async Task<string> Login(LoginDto dto)
     {
-        var user = _context.Users.FirstOrDefault(x => x.Email == dto.Email);
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
 
         if (user == null || !BCrypt.Verify(dto.Password, user.PasswordHash))
             throw new Exception("Invalid credentials");
 
         return "Login success"; // JWT later
     }
+
 }
