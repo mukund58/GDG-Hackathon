@@ -8,8 +8,11 @@ DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
-Console.WriteLine("CONN: " + connectionString);
-// var connectionString = "Host=db;Port=5432;Database=sprintforge;Username=postgres;Password=postgres";
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("Database connection string is missing or empty. Set the CONNECTION_STRING environment variable.");
+}
+// var connectionString = "Host=db;Port=5432;Database=sprintforge;Username=postgres;Password=****";
 var jwtKey = builder.Configuration["JWT_KEY"];
 
 // var connectionString = builder.Configuration["CONNECTION_STRING"];
