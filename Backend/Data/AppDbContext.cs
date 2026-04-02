@@ -1,3 +1,5 @@
+namespace Backend.Data;
+
 using Microsoft.EntityFrameworkCore;
 using Backend.Models.DTOs;
 using Backend.Models.Entities;

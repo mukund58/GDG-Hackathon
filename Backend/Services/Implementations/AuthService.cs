@@ -1,6 +1,11 @@
+namespace Backend.Services.Implementations;
+
 using BCrypt.Net;
 using Microsoft.AspNetCore.Mvc;
 using Backend.Models.DTOs;
+using Backend.Data;
+using Backend.Models.Entities;
+using Backend.Services.Interface;
 
 public class AuthService : IAuthService
 {
@@ -17,7 +22,7 @@ public class AuthService : IAuthService
         {
             Name = dto.Name,
             Email = dto.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+            PasswordHash = BCrypt.HashPassword(dto.Password)
         };
 
         _context.Users.Add(user);
@@ -30,7 +35,7 @@ public class AuthService : IAuthService
     {
         var user = _context.Users.FirstOrDefault(x => x.Email == dto.Email);
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        if (user == null || !BCrypt.Verify(dto.Password, user.PasswordHash))
             throw new Exception("Invalid credentials");
 
         return "Login success"; // JWT later

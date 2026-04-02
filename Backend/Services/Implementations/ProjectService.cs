@@ -1,3 +1,12 @@
+namespace Backend.Services.Implementations;
+
+using Microsoft.AspNetCore.Mvc;
+using Backend.Models.DTOs;
+using Backend.Models.Entities;
+using Backend.Data;
+using Backend.Services.Interface;
+using Microsoft.EntityFrameworkCore;
+
 public class ProjectService : IProjectService
 {
     private readonly AppDbContext _context;

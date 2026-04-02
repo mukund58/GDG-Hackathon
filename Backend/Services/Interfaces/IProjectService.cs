@@ -1,3 +1,8 @@
+namespace Backend.Services.Interface;
+
+using Backend.Models.DTOs;
+using Backend.Models.Entities;
+
 public interface IProjectService
 {
     Task<List<Project>> GetAll();
