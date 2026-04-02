@@ -13,7 +13,7 @@ obj/
 *.suo
 *.userprefs
 *.sln.docstates
-
+Migrations/
 # NuGet
 *.nupkg
 **/packages/
