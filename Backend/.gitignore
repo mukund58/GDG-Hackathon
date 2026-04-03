@@ -28,3 +28,7 @@ Thumbs.db
 docker-compose.override.yml
 
 out/
+
+../.vs/
+
+../obj/
