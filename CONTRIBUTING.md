@@ -95,6 +95,52 @@ git push origin feature/<feature-name>
 
 ---
 
+# 🧱 How to Add Any Module
+
+Use this flow whenever you add a new feature module such as Task, Project, Comment, or Notification.
+
+## 1. Define the Entity
+
+Create the model in Models/Entities and decide the core fields, relationships, defaults, and timestamps.
+
+## 2. Register It in DbContext
+
+Add the new DbSet to AppDbContext, then run a migration. If Docker is running, the app can apply migrations automatically on startup.
+
+## 3. Add DTOs
+
+Create request and response DTOs in Models/DTOs so the API does not expose entities directly.
+
+## 4. Add the Service Contract
+
+Define the feature operations in Services/Interfaces. Keep the contract focused on the use cases the module needs.
+
+## 5. Implement the Service
+
+Put the business logic in Services/Implementations. This is where validation, EF Core queries, and persistence should live.
+
+## 6. Add the Controller
+
+Expose the module through a controller in Controllers. Keep the controller thin and delegate work to the service layer.
+
+## 7. Register the Service
+
+Add the dependency injection registration in Program.cs so the controller can resolve the service.
+
+## Example Module Pattern
+
+The Task module follows this structure:
+
+- Entity: TaskItem
+- DbContext: Tasks
+- DTOs: task creation, status update, and assignment DTOs
+- Interface: ITaskService
+- Service: TaskService
+- Controller: TaskController
+- Registration: service added in Program.cs
+
+---
+
 # 📂 Branch Strategy
 
 ```text
