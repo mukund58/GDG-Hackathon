@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Backend.Models.DTOs;
 using Backend.Services.Interface;
 
 [ApiController]
 [Route("api/projects")]
+[Authorize]
 public class ProjectController : ControllerBase
 {
     private readonly IProjectService _service;
