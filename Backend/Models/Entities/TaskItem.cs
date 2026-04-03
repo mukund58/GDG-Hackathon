@@ -14,7 +14,7 @@ public class TaskItem
     public Project Project { get; set; }= null!;
 
     public Guid? AssignedUserId { get; set; }
-    public User AssignedUser { get; set; }= null!;
+    public User? AssignedUser { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
