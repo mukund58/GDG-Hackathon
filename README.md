@@ -102,11 +102,11 @@
 
 ### ✅ MUST
 
-- [ ] Authentication (JWT)
-- [ ] Authorization (roles + ownership)
-- [ ] Validation (FluentValidation)
+- [X] Authentication (JWT)
+- [X] Authorization (roles + ownership)
+- [X] Validation (FluentValidation)
 - [ ] Logging (Serilog or basic)
-- [ ] CORS
+- [X] CORS
 - [ ] Exception middleware
 
 ### ⚡ SHOULD HAVE
