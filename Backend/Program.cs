@@ -8,14 +8,65 @@ using Backend.Validation;
 using dotenv.net;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
+using AspNetCoreRateLimit;
 DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// Rate Limiting Configuration
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimitOptions"));
+builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+builder.Services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddControllers().AddFluentValidation(config =>
 {
     config.RegisterValidatorsFromAssemblyContaining<Program>();
 });
+
+
+// JWT Configuration
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["Secret"] ?? "your-secret-key-change-this-in-production";
+var key = Encoding.ASCII.GetBytes(secretKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidateAudience = true,
+        ValidAudience = jwtSettings["Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
 
 var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
 
@@ -51,6 +102,11 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseCors("AllowAllOrigins");
+
+app.UseIpRateLimiting();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
@@ -59,24 +115,15 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-    int retries = 10; // 🔥 increase this
-
-    while (retries > 0)
+    try
     {
-        try
-        {
-            db.Database.Migrate();
-            Console.WriteLine("✅ Database migrated successfully");
-            break;
-        }
-        catch (Exception ex)
-        {
-            retries--;
-            Console.WriteLine($"❌ Migration failed. Retrying... {retries}");
-            Console.WriteLine(ex.Message);
-
-            Thread.Sleep(5000); // wait 5 sec
-        }
+        db.Database.Migrate();
+        Console.WriteLine("✅ Database migrated successfully");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Database migration failed: {ex.Message}");
+        throw; // Re-throw to fail fast in container
     }
 }
 app.Run();
