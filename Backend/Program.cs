@@ -40,6 +40,7 @@ builder.Services.AddControllers().AddFluentValidation(config =>
     config.RegisterValidatorsFromAssemblyContaining<Program>();
 });
 
+
 // JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["Secret"] ?? "your-secret-key-change-this-in-production";
