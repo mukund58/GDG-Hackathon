@@ -1,78 +1,152 @@
-## 🎯 EXACT FEATURES (BUILD THIS ONLY)
+## 🎯 EXACT FEATURES (FINAL VERSION)
 
 ### 🟢 CORE (MUST HAVE — non-negotiable)
-- [ ] 🔐 **Auth System**
-  - [x] Register / Login
-  - [ ] JWT based auth
-  - [ ] Roles:
-    - [ ] Admin
-    - [ ] User
-  - [ ] *No OAuth / Google login*
 
-- [ ] 📋 **Task Management (CRUD)**
-  - [x] Create task
-  - [x] Assign user
-  - [ ] Priority: Low / Medium / High
-  - [x] Status: Todo / In Progress / Done
+### 🔐 Auth System
 
-- [ ] 👥 **User Workload Tracking**
-  - [ ] Count tasks per user
-  - [ ] Show active tasks
-  - [ ] Show completed tasks
+- [x] Register / Login
+- [ ] JWT based auth
+- [ ] Refresh token (optional but 🔥 bonus)
+- [ ] Roles:
+  - [ ] Admin
+  - [ ] User
+- [x] Password hashing (BCrypt)
 
-- [ ] 🤖 **AI Feature — Smart Task Assignment**
-  - [ ] Suggest best user to assign
-  - [ ] Suggest priority
-  - [ ] Example explanation: “Assign to Mukund — low workload + high completion rate”
-  - [ ] Use Gemini API
+### 📋 Task Management (REAL CORE)
 
-- [ ] 📊 **Dashboard (simple but clean)**
-  - [ ] Tasks per user
-  - [ ] Pending vs completed
-  - [ ] Workload distribution (basic chart)
+- [x] Create task
+- [x] Assign user
+- [ ] Update task
+- [ ] Delete task
+- [x] Status:
+  - [x] Todo
+  - [x] In Progress
+  - [x] Done
+- [ ] Priority:
+  - [ ] Low / Medium / High
+- [ ] Filter:
+  - [ ] By status
+  - [ ] By assigned user
+- [ ] Pagination (`?page=1&pageSize=10`)
 
-- [ ] 🌐 **Deployment**
-  - [ ] Backend → Render
-  - [ ] Frontend → Vercel
-  - [ ] DB → MongoDB Atlas
+### 👥 User Workload Tracking
 
-### 🟡 GOOD TO HAVE (if time permits)
-- [ ] 🧠 **AI Task Prioritization**
-  - [ ] Suggest urgency based on deadline + dependency
-- [ ] 🔔 **Notifications (basic)**
-  - [ ] Alert on task assignment
+- [ ] Count tasks per user
+- [ ] Active tasks
+- [ ] Completed tasks
+- [ ] Overdue tasks (optional but impressive)
+
+### 📊 Dashboard (KEEP SIMPLE BUT SMART)
+
+- [ ] Tasks per user
+- [ ] Pending vs completed
+- [ ] Workload distribution
+- [ ] Total tasks
+- [ ] Total users
+
+### 🤖 AI Feature — Smart Assignment
+
+- [ ] Suggest best user
+- [ ] Suggest priority
+- [ ] Return explanation
+- [ ] Use Gemini API
+- [ ] Fallback logic (if AI fails -> basic logic)
+  - Example: Assign user with least tasks
+
+### 🌐 Deployment
+
+- [ ] Backend → Render
+- [ ] Frontend → Vercel
+- [ ] DB → PostgreSQL
+
+### 🟡 GOOD TO HAVE
+
+- [ ] Notifications (basic)
+- [ ] AI prioritization
 
 ---
 
-## ✅ Minimum APIs
-- [x] POST   `/auth/register`
-- [x] POST   `/auth/login`
-- [ ] GET    `/users`
-- [ ] GET    `/users/:id`
-- [x] POST   `/tasks`
-- [x] GET    `/tasks`
-- [ ] PUT    `/tasks/:id`
+## ✅ Minimum APIs (UPDATED)
+
+### Auth
+
+- [x] POST `/auth/register`
+- [x] POST `/auth/login`
+
+### Users
+
+- [ ] GET `/users`
+- [ ] GET `/users/:id`
+
+### Tasks
+
+- [x] POST `/tasks`
+- [x] GET `/tasks`
+- [ ] GET `/tasks/:id`
+- [ ] PUT `/tasks/:id`
 - [ ] DELETE `/tasks/:id`
-- [ ] GET    `/dashboard`
-- [ ] POST   `/ai/suggest-assignment`
+- [ ] PATCH `/tasks/:id/status`
+- [ ] PATCH `/tasks/:id/assign`
+
+### Dashboard
+
+- [ ] GET `/dashboard`
+
+### AI
+
+- [ ] POST `/ai/suggest-assignment`
 
 ---
 
-## 🤖 AI Logic (Simple but Effective)
-**Send to Gemini:**
-- [ ] Task title
-- [ ] Description
-- [ ] List of users with workload
+## 🧠 Backend Checklist (IMPORTANT FIXES)
 
-**Receive from Gemini:**
-- [ ] Best user
-- [ ] Priority
-- [ ] Short explanation
+### ✅ MUST
+
+- [ ] Authentication (JWT)
+- [ ] Authorization (roles + ownership)
+- [ ] Validation (FluentValidation)
+- [ ] Logging (Serilog or basic)
+- [ ] CORS
+- [ ] Exception middleware
+
+### ⚡ SHOULD HAVE
+
+- [ ] Pagination
+- [ ] Filtering
+- [ ] Seeding (test data)
+- [ ] API versioning (`/api/v1`)
+- [ ] Rate limiting
+- [ ] Soft delete
+
+### 🔥 BONUS
+
+- [ ] Caching (Redis)
+
+---
+
+## 🔥 What Makes Your Project Stand Out
+
+### 1. Activity Log (IMPORTANT)
+
+- [ ] Track actions:
+  - [ ] task created
+  - [ ] task assigned
+  - [ ] status changed
+
+### 2. Ownership Security
+
+- [ ] User can only access their tasks
+
+### 3. Clean API Responses
+
+- [ ] Use DTOs
+- [ ] No raw entities
 
 ---
 
 ## 🧱 Simple Architecture
+
 - [ ] Frontend (React)
-- [x] Backend (Node/.NET API)
-- [ ] MongoDB Atlas
+- [x] Backend (.NET API)
+- [x] PostgreSQL
 - [ ] Gemini API
