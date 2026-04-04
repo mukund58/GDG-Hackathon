@@ -44,12 +44,41 @@ public class TaskService : ITaskService
         return await query.ToListAsync();
     }
 
+    public async Task<TaskItem> Update(Guid taskId, UpdateTaskDto dto)
+    {
+        var task = await _context.Tasks.FindAsync(taskId);
+
+        if (task == null)
+            throw new KeyNotFoundException("Task not found");
+
+        task.Title = dto.Title;
+        task.Description = dto.Description;
+        task.Status = dto.Status;
+        task.Priority = dto.Priority;
+        task.AssignedUserId = dto.AssignedUserId;
+
+        await _context.SaveChangesAsync();
+
+        return task;
+    }
+
+    public async Task Delete(Guid taskId)
+    {
+        var task = await _context.Tasks.FindAsync(taskId);
+
+        if (task == null)
+            throw new KeyNotFoundException("Task not found");
+
+        _context.Tasks.Remove(task);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<TaskItem> UpdateStatus(Guid taskId, string status)
     {
         var task = await _context.Tasks.FindAsync(taskId);
 
         if (task == null)
-            throw new Exception("Task not found");
+            throw new KeyNotFoundException("Task not found");
 
         task.Status = status;
 
@@ -63,7 +92,7 @@ public class TaskService : ITaskService
         var task = await _context.Tasks.FindAsync(taskId);
 
         if (task == null)
-            throw new Exception("Task not found");
+            throw new KeyNotFoundException("Task not found");
 
         task.AssignedUserId = userId;
 

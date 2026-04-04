@@ -91,6 +91,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IValidator<CreateTaskDto>, CreateTaskDtoValidator>();
+builder.Services.AddScoped<IValidator<UpdateTaskDto>, UpdateTaskDtoValidator>();
 builder.Services.AddScoped<IValidator<UpdateTaskStatusDto>, UpdateTaskStatusDtoValidator>();
 builder.Services.AddScoped<IValidator<AssignTaskDto>, AssignTaskDtoValidator>();
 
