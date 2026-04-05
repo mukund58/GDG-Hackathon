@@ -7,7 +7,7 @@ using Backend.Services.Interfaces;
 
 [ApiController]
 [Route("api/projects")]
-[Authorize]
+// [Authorize]
 public class ProjectController : ControllerBase
 {
     private readonly IProjectService _service;

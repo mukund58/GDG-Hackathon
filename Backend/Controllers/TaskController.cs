@@ -7,7 +7,7 @@ using Backend.Services.Interfaces;
 
 [ApiController]
 [Route("api/tasks")]
-[Authorize]
+// [Authorize]
 public class TaskController : ControllerBase
 {
     private readonly ITaskService _service;
