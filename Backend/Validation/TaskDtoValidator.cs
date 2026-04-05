@@ -25,12 +25,20 @@ public class CreateTaskDtoValidator : AbstractValidator<CreateTaskDto>
 
 public class UpdateTaskStatusDtoValidator : AbstractValidator<UpdateTaskStatusDto>
 {
+    private static readonly HashSet<string> AllowedStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Todo",
+        "InProgress",
+        "In Progress",
+        "Done"
+    };
+
     public UpdateTaskStatusDtoValidator()
     {
         RuleFor(x => x.Status)
             .NotEmpty()
             .WithMessage("Status is required")
-            .Must(status => new[] { "Todo", "InProgress", "In Progress", "Done" }.Contains(status))
+            .Must(status => AllowedStatuses.Contains(status))
             .WithMessage("Status must be one of: Todo, InProgress, In Progress, Done");
     }
 }
@@ -47,6 +55,21 @@ public class AssignTaskDtoValidator : AbstractValidator<AssignTaskDto>
 
 public class UpdateTaskDtoValidator : AbstractValidator<UpdateTaskDto>
 {
+    private static readonly HashSet<string> AllowedStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Todo",
+        "InProgress",
+        "In Progress",
+        "Done"
+    };
+
+    private static readonly HashSet<string> AllowedPriorities = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Low",
+        "Medium",
+        "High"
+    };
+
     public UpdateTaskDtoValidator()
     {
         RuleFor(x => x.Title)
@@ -62,13 +85,13 @@ public class UpdateTaskDtoValidator : AbstractValidator<UpdateTaskDto>
         RuleFor(x => x.Status)
             .NotEmpty()
             .WithMessage("Status is required")
-            .Must(status => new[] { "Todo", "InProgress", "In Progress", "Done" }.Contains(status))
+            .Must(status => AllowedStatuses.Contains(status))
             .WithMessage("Status must be one of: Todo, InProgress, In Progress, Done");
 
         RuleFor(x => x.Priority)
             .NotEmpty()
             .WithMessage("Priority is required")
-            .Must(priority => new[] { "Low", "Medium", "High" }.Contains(priority))
+            .Must(priority => AllowedPriorities.Contains(priority))
             .WithMessage("Priority must be one of: Low, Medium, High");
     }
 }

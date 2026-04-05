@@ -1,10 +1,9 @@
 namespace Backend.Services.Implementations;
 
-using Microsoft.AspNetCore.Mvc;
 using Backend.Models.DTOs;
 using Backend.Models.Entities;
 using Backend.Data;
-using Backend.Services.Interface;
+using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 public class TaskService : ITaskService
@@ -33,7 +32,9 @@ public class TaskService : ITaskService
 
     public async Task<List<TaskItem>> GetAll(string? status, Guid? assignedTo)
     {
-        var query = _context.Tasks.AsQueryable();
+        var query = _context.Tasks
+            .AsNoTracking()
+            .AsQueryable();
 
         if (!string.IsNullOrEmpty(status))
             query = query.Where(x => x.Status == status);
@@ -46,10 +47,7 @@ public class TaskService : ITaskService
 
     public async Task<TaskItem> Update(Guid taskId, UpdateTaskDto dto)
     {
-        var task = await _context.Tasks.FindAsync(taskId);
-
-        if (task == null)
-            throw new KeyNotFoundException("Task not found");
+        var task = await GetTaskByIdOrThrowAsync(taskId);
 
         task.Title = dto.Title;
         task.Description = dto.Description;
@@ -64,21 +62,15 @@ public class TaskService : ITaskService
 
     public async Task Delete(Guid taskId)
     {
-        var task = await _context.Tasks.FindAsync(taskId);
+        var task = await GetTaskByIdOrThrowAsync(taskId);
 
-        if (task == null)
-            throw new KeyNotFoundException("Task not found");
-
-        _context.Tasks.Remove(task);
+        task.IsDeleted = true;
         await _context.SaveChangesAsync();
     }
 
     public async Task<TaskItem> UpdateStatus(Guid taskId, string status)
     {
-        var task = await _context.Tasks.FindAsync(taskId);
-
-        if (task == null)
-            throw new KeyNotFoundException("Task not found");
+        var task = await GetTaskByIdOrThrowAsync(taskId);
 
         task.Status = status;
 
@@ -89,14 +81,21 @@ public class TaskService : ITaskService
 
     public async Task<TaskItem> Assign(Guid taskId, Guid userId)
     {
-        var task = await _context.Tasks.FindAsync(taskId);
-
-        if (task == null)
-            throw new KeyNotFoundException("Task not found");
+        var task = await GetTaskByIdOrThrowAsync(taskId);
 
         task.AssignedUserId = userId;
 
         await _context.SaveChangesAsync();
+
+        return task;
+    }
+
+    private async Task<TaskItem> GetTaskByIdOrThrowAsync(Guid taskId)
+    {
+        var task = await _context.Tasks.FirstOrDefaultAsync(x => x.Id == taskId);
+
+        if (task == null)
+            throw new KeyNotFoundException("Task not found");
 
         return task;
     }
