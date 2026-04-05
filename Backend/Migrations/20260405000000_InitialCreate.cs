@@ -51,6 +51,7 @@ namespace Backend.Migrations
                     ProjectId = table.Column<Guid>(type: "uuid", nullable: false),
                     AssignedUserId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DueDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>

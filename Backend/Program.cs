@@ -13,7 +13,16 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using AspNetCoreRateLimit;
-DotEnv.Load();
+
+// Load .env file - try from current directory, ignore if not found
+try
+{
+    DotEnv.Load();
+}
+catch
+{
+    // .env file might not exist in container, environment variables should be set by docker-compose
+}
 
 var builder = WebApplication.CreateBuilder(args);
 

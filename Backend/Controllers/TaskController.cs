@@ -65,16 +65,4 @@ public class TaskController : ControllerBase
         return Ok(ApiResponseDto<Backend.Models.Entities.TaskItem>.Ok(task, "Task assigned"));
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTaskDto dto)
-    {
-        return Ok(await _service.Update(id, dto));
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
-    {
-        await _service.Delete(id);
-        return NoContent();
-    }
-}
+ }
