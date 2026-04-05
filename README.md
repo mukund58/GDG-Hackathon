@@ -31,18 +31,18 @@
 
 ### 👥 User Workload Tracking
 
-- [ ] Count tasks per user
-- [ ] Active tasks
-- [ ] Completed tasks
-- [ ] Overdue tasks (optional but impressive)
+- [x] Count tasks per user
+- [x] Active tasks
+- [x] Completed tasks
+- [x] Overdue tasks (optional but impressive)
 
 ### 📊 Dashboard (KEEP SIMPLE BUT SMART)
 
-- [ ] Tasks per user
-- [ ] Pending vs completed
-- [ ] Workload distribution
-- [ ] Total tasks
-- [ ] Total users
+- [x] Tasks per user
+- [x] Pending vs completed
+- [x] Workload distribution
+- [x] Total tasks
+- [x] Total users
 
 ### 🤖 AI Feature — Smart Assignment
 
@@ -76,8 +76,8 @@
 
 ### Users
 
-- [ ] GET `/users`
-- [ ] GET `/users/:id`
+- [x] GET `/users`
+- [x] GET `/users/:id`
 
 ### Project
 
@@ -91,11 +91,19 @@
 
 - [x] POST `/tasks`
 - [x] GET `/tasks`
-- [ ] GET `/tasks/:id`
+- [x] GET `/tasks/:id`
 - [x] PUT `/tasks/:id`
 - [x] DELETE `/tasks/:id`
 - [x] PATCH `/tasks/:id/status`
 - [x] PATCH `/tasks/:id/assign`
+
+### Dashboard
+
+- [x] GET `/dashboard`
+
+### AI
+
+- [ ] POST `/ai/suggest-assignment`
 
 ### Dashboard
 
@@ -111,13 +119,13 @@
 
 ### ✅ MUST
 
-- [X] Authentication (JWT)
+- [x] Authentication (JWT)
 - [ ] Authorization (roles + ownership)
   - [ ] Role-based access
   - [ ] Resource ownership
-- [X] Validation (FluentValidation)
+- [x] Validation (FluentValidation)
 - [ ] Logging (Serilog or basic)
-- [X] CORS
+- [x] CORS
 - [ ] Exception middleware
 
 ### ⚡ SHOULD HAVE
@@ -125,8 +133,8 @@
 - [ ] Pagination + filtering (`?status=todo&assignedTo=5&page=1&pageSize=10`)
 - [ ] Seeding (test data)
 - [ ] API versioning (`/api/v1`)
-- [X] Rate limiting
-- [X] Soft delete
+- [x] Rate limiting
+- [x] Soft delete
 
 ### 🔥 BONUS
 
@@ -151,7 +159,7 @@
   - [ ] Task.Status
   - [ ] Task.AssignedUserId
   - [ ] Task.ProjectId
-- [X] Soft delete
+- [x] Soft delete
 - [ ] AI assignment (full logic)
   - [ ] Fallback logic
   - [ ] Deterministic API shape
@@ -167,15 +175,15 @@
 - [ ] GET `/tasks/:id`
 - [ ] GET `/users`
 - [ ] GET `/users/:id`
-- [ ] Tasks per user
-- [ ] Pending vs completed
-- [ ] Total counts
-- [ ] Workload distribution
-- [ ] GET `/dashboard`
-- [ ] Count tasks per user
-- [ ] Active tasks
-- [ ] Completed tasks
-- [ ] Overdue tasks
+- [x] Tasks per user
+- [x] Pending vs completed
+- [x] Total counts
+- [x] Workload distribution
+- [x] GET `/dashboard`
+- [x] Count tasks per user
+- [x] Active tasks
+- [x] Completed tasks
+- [x] Overdue tasks
 - [ ] Pagination
 - [ ] Combine filtering + pagination
 - [ ] Backend → Render
