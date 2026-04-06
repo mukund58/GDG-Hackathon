@@ -1,93 +1,115 @@
-## 🎯 EXACT FEATURES (FINAL VERSION)
+## 🎯 CORE (MUST COMPLETE)
 
-### 🟢 CORE (MUST HAVE — non-negotiable)
-
-### 🔐 Auth System
+## 🔐 Auth & Security
 
 - [x] Register / Login
-- [x] JWT based auth
-- [ ] Refresh token (optional but 🔥 bonus)
-- [ ] Roles:
-  - [ ] Admin
-  - [ ] User
+- [x] JWT authentication
+- [ ] Role-based access (RBAC)
+  - [ ] Admin / Manager / User
+- [ ] Ownership check (user can access only their tasks)
 - [x] Password hashing (BCrypt)
+- [ ] Refresh token *(optional but strong)*
 
-### 📋 Task Management (REAL CORE)
+---
+
+## 📋 Task + Project System (MAIN CORE)
 
 - [x] Create task
 - [x] Assign user
 - [x] Update task
-- [x] Delete task
-- [x] Status:
-  - [x] Todo
-  - [x] In Progress
-  - [x] Done
-- [ ] Priority:
-  - [ ] Low / Medium / High
-- [x] Filter:
-  - [x] By status
-  - [x] By assigned user
-- [ ] Pagination (`?page=1&pageSize=10`)
+- [x] Soft delete task
+- [x] Status workflow:
+  - Todo / In Progress / Done / add Custom status
 
-### 👥 User Workload Tracking
+### 🔥 ADD THIS (VERY IMPORTANT)
+
+- [ ] Priority (Low / Medium / High)
+- [ ] Due date
+- [ ] Pagination (`?page=1&pageSize=10`)
+- [ ] Sorting (`?sortBy=createdAt`)
+
+---
+
+## 🧩 REAL JIRA FEATURES (YOU WERE MISSING)
+
+### ✅ Comments System
+
+- [ ] Add comment to task
+- [ ] Get task comments
 
 - [x] Count tasks per user
 - [x] Active tasks
 - [x] Completed tasks
 - [x] Overdue tasks (optional but impressive)
+### ✅ Activity Log (VERY IMPORTANT)
 
-### 📊 Dashboard (KEEP SIMPLE BUT SMART)
+- [ ] Track:
+  - task created
+  - assigned
+  - status changed
+
+### ✅ Checklist / Subtasks (🔥 HIGH VALUE)
+
+- [ ] Task checklist items
+- [ ] Mark complete/incomplete
+
+---
+
+## 👥 Workload & Dashboard
 
 - [x] Tasks per user
-- [x] Pending vs completed
-- [x] Workload distribution
-- [x] Total tasks
-- [x] Total users
+- [x] Active tasks
+- [x] Completed tasks
 
-### 🤖 AI Feature — Smart Assignment
+### Improve:
+
+- [ ] Overdue tasks
+- [ ] Total tasks / users
+- [ ] Workload distribution
+
+---
+
+## 🤖 AI Feature (KEEP SIMPLE)
 
 - [ ] Suggest best user
 - [ ] Suggest priority
 - [ ] Return explanation
-- [ ] Deterministic input/output shape
-- [ ] Use Gemini API
-- [ ] Fallback logic (if AI fails -> basic logic)
-  - Example: Assign user with least active tasks
 
-### 🌐 Deployment
+### 🔥 Add fallback:
 
-- [ ] Backend → Render
-- [ ] Frontend → Vercel
-- [ ] DB → PostgreSQL
-
-### 🟡 GOOD TO HAVE
-
-- [ ] Notifications (basic)
-- [ ] AI prioritization
+Assign user with least tasks
 
 ---
 
-## ✅ Minimum APIs (UPDATED)
+## 🌐 Deployment
 
-### Auth
+- [x] Docker (API + DB)
+- [ ] Deploy backend (Render)
+- [ ] PostgreSQL (cloud)
 
-- [x] POST `/auth/register`
-- [x] POST `/auth/login`
+---
 
-### Users
+# ⚡ PHASE 2 (IF TIME)
+
+## 🔔 Notifications
+
+- [ ] Notify on assignment
+- [ ] Notify on comment
+
+## 🔍 Search
+
+- [ ] Search tasks by title
+
+## 🏷️ Labels
 
 - [x] GET `/users`
 - [x] GET `/users/:id`
 
-### Project
+---
 
-- [x] GET `/project`
-- [ ] GET `/project/:id`
-- [x] POST `/project`
-- [ ] PUT `/project/:id`
-- [ ] DELETE `/project/:id`
+# 🧠 Backend Must-Haves (KEEP CLEAN)
 
-### Tasks
+## ✅ Required
 
 - [x] POST `/tasks`
 - [x] GET `/tasks`
@@ -96,28 +118,29 @@
 - [x] DELETE `/tasks/:id`
 - [x] PATCH `/tasks/:id/status`
 - [x] PATCH `/tasks/:id/assign`
+- [x] JWT auth
+- [ ] Authorization (roles + ownership)
+- [x] Validation
+- [x] Exception middleware
+- [x] CORS
+- [ ] Logging (basic is enough)
 
-### Dashboard
+## ⚡ Important
 
-- [x] GET `/dashboard`
+- [ ] Pagination + filtering
+- [ ] API versioning `/api/v1`
+- [ ] Seeding
 
-### AI
+## 🔥 Bonus
 
-- [ ] POST `/ai/suggest-assignment`
-
-### Dashboard
-
-- [ ] GET `/dashboard`
-
-### AI
-
-- [ ] POST `/ai/suggest-assignment`
+- [ ] Redis caching
+- [ ] Rate limiting
 
 ---
 
-## 🧠 Backend Checklist (IMPORTANT FIXES)
+# 🧠 API FIXES (YOU MISSED)
 
-### ✅ MUST
+Add:
 
 - [x] Authentication (JWT)
 - [ ] Authorization (roles + ownership)
@@ -127,24 +150,46 @@
 - [ ] Logging (Serilog or basic)
 - [X] CORS
 - [X] Exception middleware
+```text
+GET    /tasks/:id
+GET    /tasks?status=&assignedTo=&page=
+POST   /tasks/:id/comments
+GET    /tasks/:id/comments
+GET    /activity
+```
 
-### ⚡ SHOULD HAVE
+---
+
+# ⚔️ Team Split (FIXED)
 
 - [ ] Pagination + filtering (`?status=todo&assignedTo=5&page=1&pageSize=10`)
 - [ ] Seeding (test data)
 - [ ] API versioning (`/api/v1`)
 - [x] Rate limiting
 - [x] Soft delete
+## 🧠 YOU (CORE / HARD)
 
-### 🔥 BONUS
+- Auth + JWT
+- RBAC + ownership
+- Activity log
+- AI logic
+- Pagination + filtering
+- Docker + infra
 
-- [ ] Caching (Redis)
+## 👤 TEAMMATE
+
+- Project APIs
+- Comments
+- Dashboard
+- User APIs
+- Seeding
+- Swagger / Postman
 
 ---
 
-## ⚔️ Team Split Strategy
+# 🧠 Final Reality Check
 
-### 🧠 You (Lead / Core / Hard)
+If you complete:
 
 - [ ] Authorization (roles + ownership)
   - [ ] Role-based access
@@ -192,51 +237,79 @@
 - [ ] Basic notifications
 - [ ] Priority field
 
-### 🔗 How To Work Together
-
-- [ ] Define DTOs and APIs first
-- [ ] Keep response format consistent: `{ success, data, message }`
-- [ ] You own `Services/`, `Repositories/`, `Middleware/`
-- [ ] Teammate owns `Controllers/`, `DTOs/`, dashboard wiring
-
-### ⚡ Final Execution Plan
-
-- [ ] Week 1: You handle auth, authorization, middleware; teammate handles CRUD and basic APIs
-- [ ] Week 2: You handle transactions, repository, logging; teammate handles pagination and dashboard
-- [ ] Week 3: You handle SignalR and AI; teammate handles deployment and seeding
+👉 You already beat **80–90% students**
 
 ---
 
-## 🔥 What Makes Your Project Stand Out
+# 🔥 What Makes Your Project “Stand Out”
 
-### 1. Activity Log (IMPORTANT)
+These 3:
 
-- [ ] Track actions:
-  - [ ] task created
-  - [ ] task assigned
-  - [ ] status changed
-
-### 2. Ownership Security
-
-- [ ] User can only access their tasks
-
-### 3. Clean API Responses
-
-- [ ] Use DTOs
-- [ ] No raw entities
+1. Activity log
+2. Checklist/subtasks
+3. AI suggestion
 
 ---
 
-## 🧱 Simple Architecture
+# ✅ Recommended Next Features
 
-- [ ] Frontend (React)
-- [x] Backend (.NET API)
-- [x] PostgreSQL
-- [ ] Gemini API
+## 1) Task Checklists / Subtasks
+
+- [ ] Add `ChecklistItem` entity linked to `TaskItem`
+- [ ] Add checklist CRUD endpoints
+- [ ] Mark checklist items complete/incomplete
+- [ ] Keep checklist order
+- [ ] Show task `% complete` rollup
+
+## 2) Comments / Activity Feed / Audit Log
+
+- [ ] Add comments per task
+- [ ] Get task comments
+- [ ] Track activity history for task changes
+- [ ] Store audit logs for admin/compliance
+
+## 3) RBAC + Permissions per Endpoint
+
+- [ ] Add roles: Admin / Manager / User / Viewer
+- [ ] Add permission matrix per endpoint/action
+- [ ] Add project-level access control
+- [ ] Use `[Authorize(Roles=...)]` where needed
+
+## 4) Pagination + Sorting + Search
+
+- [ ] Add paging to `GET /tasks`
+- [ ] Add sorting by due date, priority, and created date
+- [ ] Add search by title and description
+- [ ] Keep filtering + pagination together
+
+## 5) More Workflow Depth
+
+- [ ] Add custom workflows per project
+- [ ] Add validation rules for task transitions
+- [ ] Add extra statuses like Blocked / In Review / QA
+
+## 6) Labels, Attachments, Watchers, Notifications
+
+- [ ] Add labels/tags
+- [ ] Add file attachments
+- [ ] Add watchers / @mentions
+- [ ] Add email / Slack / Teams notifications
+
+## 7) Bulk Actions
+
+- [ ] Bulk assign tasks
+- [ ] Bulk change status
+- [ ] Bulk close tasks
+
+## 8) Ownership + Multi-Tenancy
+
+- [ ] Add CreatedBy / UpdatedBy metadata
+- [ ] Add organization / tenant boundaries if needed
+- [ ] Enforce ownership and visibility rules
 
 ---
 
-## 🐳 Run With Docker
+# 🐳 Run With Docker
 
 This project uses Docker Compose from the Backend folder. It starts the API and a PostgreSQL container together.
 
