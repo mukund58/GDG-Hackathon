@@ -112,9 +112,9 @@ public class UpdateChecklistItemCompletionDtoValidator : AbstractValidator<Updat
 {
     public UpdateChecklistItemCompletionDtoValidator()
     {
-        RuleFor(x => x)
+        RuleFor(x => x.IsCompleted)
             .NotNull()
-            .WithMessage("Request body is required");
+            .WithMessage("IsCompleted is required");
 public class CreateCommentDtoValidator : AbstractValidator<CreateCommentDto>
 {
     public CreateCommentDtoValidator()
