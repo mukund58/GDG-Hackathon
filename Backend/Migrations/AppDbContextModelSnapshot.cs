@@ -44,6 +44,7 @@ namespace Backend.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid");
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 

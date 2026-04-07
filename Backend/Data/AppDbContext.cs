@@ -39,7 +39,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<TaskActivity>()
             .HasIndex(x => new { x.TaskItemId, x.CreatedAt });
-        modelBuilder.Entity<TaskComment>().HasQueryFilter(comment => !comment.IsDeleted);
 
         // Foreign key relationships
         modelBuilder.Entity<TaskComment>()
@@ -53,11 +52,5 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(tc => tc.AuthorId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<ChecklistItem>()
-            .HasOne(ci => ci.Task)
-            .WithMany()
-            .HasForeignKey(ci => ci.TaskId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -27,9 +27,9 @@ public class ChecklistService : IChecklistService
 
         var checklistItem = new ChecklistItem
         {
-            TaskId = taskId,
+            TaskItemId = taskId,
             Title = dto.Title,
-            Order = dto.Order,
+            Position = dto.Order,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -44,8 +44,8 @@ public class ChecklistService : IChecklistService
         var items = await _context.ChecklistItems
             .AsNoTracking()
             .IgnoreQueryFilters()
-            .Where(ci => ci.TaskId == taskId && !ci.IsDeleted)
-            .OrderBy(ci => ci.Order)
+            .Where(ci => ci.TaskItemId == taskId && !ci.IsDeleted)
+            .OrderBy(ci => ci.Position)
             .ToListAsync();
 
         return items.Select(MapToDto).ToList();
@@ -56,7 +56,7 @@ public class ChecklistService : IChecklistService
         var items = await _context.ChecklistItems
             .AsNoTracking()
             .IgnoreQueryFilters()
-            .Where(ci => ci.TaskId == taskId && !ci.IsDeleted)
+            .Where(ci => ci.TaskItemId == taskId && !ci.IsDeleted)
             .ToListAsync();
 
         var total = items.Count;
@@ -75,7 +75,7 @@ public class ChecklistService : IChecklistService
         var item = await GetChecklistItemByIdOrThrowAsync(checklistItemId);
 
         item.Title = dto.Title;
-        item.Order = dto.Order;
+        item.Position = dto.Order;
 
         // If marking as completed, set CompletedAt
         if (dto.IsCompleted && !item.IsCompleted)
@@ -126,7 +126,7 @@ public class ChecklistService : IChecklistService
 
         var items = await _context.ChecklistItems
             .IgnoreQueryFilters()
-            .Where(ci => ci.TaskId == taskId && !ci.IsDeleted)
+            .Where(ci => ci.TaskItemId == taskId && !ci.IsDeleted)
             .ToListAsync();
 
         // Reorder based on the provided list
@@ -135,7 +135,7 @@ public class ChecklistService : IChecklistService
             var item = items.FirstOrDefault(it => it.Id == itemIds[i]);
             if (item != null)
             {
-                item.Order = i;
+                item.Position = i;
             }
         }
 
@@ -161,8 +161,8 @@ public class ChecklistService : IChecklistService
             Id = item.Id,
             Title = item.Title,
             IsCompleted = item.IsCompleted,
-            Order = item.Order,
-            TaskId = item.TaskId,
+            Order = item.Position,
+            TaskId = item.TaskItemId,
             CreatedAt = item.CreatedAt,
             CompletedAt = item.CompletedAt
         };

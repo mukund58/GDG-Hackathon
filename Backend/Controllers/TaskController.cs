@@ -134,7 +134,7 @@ public class TaskController : ControllerBase
     public async Task<IActionResult> UpdateChecklistItemCompletion(Guid id, Guid checklistItemId, [FromBody] UpdateChecklistItemCompletionDto dto)
     {
         await EnsureTaskAccessAsync(id);
-        var item = await _service.UpdateChecklistItemCompletion(id, checklistItemId, dto.IsCompleted);
+        var item = await _service.UpdateChecklistItemCompletion(id, checklistItemId, dto.IsCompleted ?? false);
         return Ok(ApiResponseDto<ChecklistItem>.Ok(item, "Checklist item updated"));
     }
 

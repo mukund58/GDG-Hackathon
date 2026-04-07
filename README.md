@@ -250,7 +250,7 @@ If you complete:
 - [ ] SignalR integration
 - [ ] Activity log system
 - [ ] Logging (Serilog)
-- [ ] Testing (xUnit)
+- [x] Testing (xUnit)
 
 ### 🧑‍💻 Teammate (Easy / Safe / Visible)
 

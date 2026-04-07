@@ -22,8 +22,10 @@ public class ProjectService : IProjectService
             .ToListAsync();
     }
 
-    public async Task<Project> Create(ProjectDto dto)
+    public async Task<Project> Create(ProjectDto dto, Guid creatorUserId)
     {
+        _ = creatorUserId;
+
         var project = new Project
         {
             Name = dto.Name,

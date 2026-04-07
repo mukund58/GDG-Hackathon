@@ -34,11 +34,6 @@ public class UpdateTaskDto
     public DateTime? DueDate { get; set; }
 }
 
-public class CreateChecklistItemDto
-{
-    public string Title { get; set; } = string.Empty;
-}
-
 public class UpdateChecklistItemCompletionDto
 {
     [System.ComponentModel.DataAnnotations.Required]

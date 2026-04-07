@@ -30,7 +30,7 @@ public class ProjectController : ControllerBase
     [Authorize(Policy = "ProjectWrite")]
     public async Task<IActionResult> Create([FromBody] ProjectDto dto)
     {
-        var project = await _service.Create(dto);
+        var project = await _service.Create(dto, GetCurrentUserId());
         return Ok(ApiResponseDto<Backend.Models.Entities.Project>.Ok(project, "Project created"));
     }
 
@@ -62,5 +62,15 @@ public class ProjectController : ControllerBase
             return NotFound(ApiResponseDto<object>.Fail("Project not found"));
 
         return Ok(ApiResponseDto<object>.Ok(null, "Project deleted"));
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedAccessException("Invalid user context");
+
+        return userId;
     }
 }
