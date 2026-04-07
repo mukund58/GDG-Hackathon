@@ -11,6 +11,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
 using System.Text;
 using AspNetCoreRateLimit;
 
@@ -87,7 +88,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("TaskRead", policy =>
+        policy.RequireRole("Admin", "Manager", "User", "Viewer"));
+
+    options.AddPolicy("TaskWrite", policy =>
+        policy.RequireRole("Admin", "Manager", "User"));
+
+    options.AddPolicy("ProjectRead", policy =>
+        policy.RequireRole("Admin", "Manager", "User", "Viewer"));
+
+    options.AddPolicy("ProjectWrite", policy =>
+        policy.RequireRole("Admin", "Manager", "User"));
+});
 
 var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
 
@@ -162,8 +176,15 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        db.Database.Migrate();
-        Console.WriteLine("✅ Database migrated successfully");
+        if (DatabaseHasExistingSchema(db))
+        {
+            Console.WriteLine("⚠️ Database schema already exists, skipping initial migration");
+        }
+        else
+        {
+            db.Database.Migrate();
+            Console.WriteLine("✅ Database migrated successfully");
+        }
     }
     catch (Exception ex)
     {
@@ -171,4 +192,22 @@ using (var scope = app.Services.CreateScope())
         throw; // Re-throw to fail fast in container
     }
 }
+
+static bool DatabaseHasExistingSchema(AppDbContext db)
+{
+    db.Database.OpenConnection();
+
+    try
+    {
+        using var command = db.Database.GetDbConnection().CreateCommand();
+        command.CommandText = "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'Projects')";
+        var result = command.ExecuteScalar();
+        return result is bool exists && exists;
+    }
+    finally
+    {
+        db.Database.CloseConnection();
+    }
+}
+
 app.Run();
