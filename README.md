@@ -65,8 +65,8 @@
 - [x] Completed tasks
 - [x] Overdue tasks (optional but impressive)
 
-- [ ] Task checklist items
-- [ ] Mark complete/incomplete
+- [x] Task checklist items
+- [x] Mark complete/incomplete
 
 - [x] Tasks per user
 - [x] Pending vs completed
@@ -295,16 +295,16 @@ These 3:
 
 ## 1) Task Checklists / Subtasks
 
-- [ ] Add `ChecklistItem` entity linked to `TaskItem`
-- [ ] Add checklist CRUD endpoints
-- [ ] Mark checklist items complete/incomplete
-- [ ] Keep checklist order
+- [x] Add `ChecklistItem` entity linked to `TaskItem`
+- [x] Add checklist CRUD endpoints
+- [x] Mark checklist items complete/incomplete
+- [x] Keep checklist order
 - [ ] Show task `% complete` rollup
 
 ## 2) Comments / Activity Feed / Audit Log
 
-- [ ] Add comments per task
-- [ ] Get task comments
+- [x] Add comments per task
+- [x] Get task comments
 - [ ] Track activity history for task changes
 - [ ] Store audit logs for admin/compliance
 

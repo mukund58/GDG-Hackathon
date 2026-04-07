@@ -19,6 +19,8 @@ public class AppDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<TaskItem>().HasQueryFilter(task => !task.IsDeleted);
+        modelBuilder.Entity<TaskComment>().HasQueryFilter(comment => !comment.IsDeleted);
+        modelBuilder.Entity<ChecklistItem>().HasQueryFilter(item => !item.IsDeleted);
 
         modelBuilder.Entity<ChecklistItem>()
             .HasOne(x => x.TaskItem)
@@ -51,5 +53,11 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(tc => tc.AuthorId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ChecklistItem>()
+            .HasOne(ci => ci.Task)
+            .WithMany()
+            .HasForeignKey(ci => ci.TaskId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

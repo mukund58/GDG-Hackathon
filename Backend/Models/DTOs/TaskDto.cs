@@ -43,6 +43,7 @@ public class UpdateChecklistItemCompletionDto
 {
     [System.ComponentModel.DataAnnotations.Required]
     public bool? IsCompleted { get; set; }
+}
 public class CreateCommentDto
 {
     public string Content { get; set; } = string.Empty;

@@ -96,6 +96,7 @@ public class UpdateTaskDtoValidator : AbstractValidator<UpdateTaskDto>
     }
 }
 
+
 public class CreateChecklistItemDtoValidator : AbstractValidator<CreateChecklistItemDto>
 {
     public CreateChecklistItemDtoValidator()
@@ -115,6 +116,7 @@ public class UpdateChecklistItemCompletionDtoValidator : AbstractValidator<Updat
         RuleFor(x => x.IsCompleted)
             .NotNull()
             .WithMessage("IsCompleted is required");
+
 public class CreateCommentDtoValidator : AbstractValidator<CreateCommentDto>
 {
     public CreateCommentDtoValidator()
