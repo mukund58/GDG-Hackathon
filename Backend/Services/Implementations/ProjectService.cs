@@ -24,13 +24,7 @@ public class ProjectService : IProjectService
 
     public async Task<Project> Create(ProjectDto dto, Guid creatorUserId)
     {
-        var creator = await _context.Users.FirstOrDefaultAsync(x => x.Id == creatorUserId);
-
-        if (creator == null)
-            throw new UnauthorizedAccessException("User not found");
-
-        if (string.Equals(creator.Role, "User", StringComparison.OrdinalIgnoreCase))
-            creator.Role = "Manager";
+        _ = creatorUserId;
 
         var project = new Project
         {

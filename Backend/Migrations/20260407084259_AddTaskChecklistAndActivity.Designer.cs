@@ -3,6 +3,7 @@ using System;
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407084259_AddTaskChecklistAndActivity")]
+    partial class AddTaskChecklistAndActivity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -37,14 +40,6 @@ namespace Backend.Migrations
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uuid");
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 
@@ -57,9 +52,6 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TaskId");
-
-                    b.HasQueryFilter((System.Linq.Expressions.LambdaExpression)(System.Linq.Expressions.Expression<System.Func<Backend.Models.Entities.ChecklistItem, bool>>)(item => !item.IsDeleted));
                     b.HasIndex("TaskItemId", "Position");
 
                     b.ToTable("ChecklistItems");
@@ -84,7 +76,7 @@ namespace Backend.Migrations
                     b.ToTable("Projects");
                 });
 
-            modelBuilder.Entity("Backend.Models.Entities.TaskComment", b =>
+            modelBuilder.Entity("Backend.Models.Entities.TaskActivity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -114,34 +106,6 @@ namespace Backend.Migrations
                     b.HasIndex("TaskItemId", "CreatedAt");
 
                     b.ToTable("TaskActivities");
-                    b.Property<Guid>("AuthorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("TaskId");
-
-                    b.HasQueryFilter((System.Linq.Expressions.LambdaExpression)(System.Linq.Expressions.Expression<System.Func<Backend.Models.Entities.TaskComment, bool>>)(comment => !comment.IsDeleted));
-
-                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.TaskItem", b =>
@@ -220,36 +184,6 @@ namespace Backend.Migrations
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.ChecklistItem", b =>
-                {
-                    b.HasOne("Backend.Models.Entities.TaskItem", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Task");
-                });
-
-            modelBuilder.Entity("Backend.Models.Entities.TaskComment", b =>
-                {
-                    b.HasOne("Backend.Models.Entities.User", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Backend.Models.Entities.TaskItem", "Task")
-                        .WithMany()
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Author");
-
-                    b.Navigation("Task");
-                });
-
-            modelBuilder.Entity("Backend.Models.Entities.TaskItem", b =>
                 {
                     b.HasOne("Backend.Models.Entities.TaskItem", "TaskItem")
                         .WithMany()

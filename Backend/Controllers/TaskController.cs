@@ -23,17 +23,39 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskWrite")]
     public async Task<IActionResult> Create([FromBody] CreateTaskDto dto)
     {
-        var task = await _service.Create(dto);
+        var task = await _service.Create(dto, GetCurrentUserId());
         return Ok(ApiResponseDto<Backend.Models.Entities.TaskItem>.Ok(task, "Task created"));
     }
 
     [HttpGet]
     [Authorize(Policy = "TaskRead")]
-    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] Guid? assignedTo)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null,
+        [FromQuery] Guid? assignedTo = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool sortDescending = false)
     {
         assignedTo = EnforceOwnershipFilter(assignedTo);
-        var tasks = await _service.GetAll(status, assignedTo);
-        return Ok(ApiResponseDto<List<Backend.Models.Entities.TaskItem>>.Ok(tasks, "Tasks retrieved"));
+
+        var query = new TaskQueryDto
+        {
+            Page = page,
+            PageSize = pageSize,
+            Status = status,
+            AssignedTo = assignedTo,
+            SortBy = sortBy,
+            SortDescending = sortDescending
+        };
+
+        var result = await _service.GetAllPaginatedAsync(query);
+        return Ok(new ApiResponseDto<PaginatedResponseDto<Backend.Models.Entities.TaskItem>>
+        {
+            Success = true,
+            Data = result,
+            Message = "Tasks retrieved"
+        });
     }
 
     [HttpPut("{id}")]
@@ -41,7 +63,7 @@ public class TaskController : ControllerBase
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTaskDto dto)
     {
         await EnsureTaskAccessAsync(id);
-        var task = await _service.Update(id, dto);
+        var task = await _service.Update(id, dto, GetCurrentUserId());
         return Ok(ApiResponseDto<Backend.Models.Entities.TaskItem>.Ok(task, "Task updated"));
     }
 
@@ -67,7 +89,7 @@ public class TaskController : ControllerBase
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateTaskStatusDto dto)
     {
         await EnsureTaskAccessAsync(id);
-        var task = await _service.UpdateStatus(id, dto.Status);
+        var task = await _service.UpdateStatus(id, dto.Status, GetCurrentUserId());
         return Ok(ApiResponseDto<Backend.Models.Entities.TaskItem>.Ok(task, "Task status updated"));
     }
 
@@ -76,8 +98,44 @@ public class TaskController : ControllerBase
     public async Task<IActionResult> Assign(Guid id, [FromBody] AssignTaskDto dto)
     {
         await EnsureTaskAccessAsync(id);
-        var task = await _service.Assign(id, dto.UserId);
+        var task = await _service.Assign(id, dto.UserId, GetCurrentUserId());
         return Ok(ApiResponseDto<Backend.Models.Entities.TaskItem>.Ok(task, "Task assigned"));
+    }
+
+    [HttpGet("{id}/activity")]
+    [Authorize(Policy = "TaskRead")]
+    public async Task<IActionResult> GetActivity(Guid id)
+    {
+        await EnsureTaskAccessAsync(id);
+        var activity = await _service.GetActivity(id);
+        return Ok(ApiResponseDto<List<TaskActivity>>.Ok(activity, "Task activity retrieved"));
+    }
+
+    [HttpGet("{id}/checklist")]
+    [Authorize(Policy = "TaskRead")]
+    public async Task<IActionResult> GetChecklist(Guid id)
+    {
+        await EnsureTaskAccessAsync(id);
+        var items = await _service.GetChecklistItems(id);
+        return Ok(ApiResponseDto<List<ChecklistItem>>.Ok(items, "Task checklist retrieved"));
+    }
+
+    [HttpPost("{id}/checklist")]
+    [Authorize(Policy = "TaskWrite")]
+    public async Task<IActionResult> AddChecklistItem(Guid id, [FromBody] CreateChecklistItemDto dto)
+    {
+        await EnsureTaskAccessAsync(id);
+        var item = await _service.AddChecklistItem(id, dto);
+        return Ok(ApiResponseDto<ChecklistItem>.Ok(item, "Checklist item added"));
+    }
+
+    [HttpPatch("{id}/checklist/{checklistItemId}")]
+    [Authorize(Policy = "TaskWrite")]
+    public async Task<IActionResult> UpdateChecklistItemCompletion(Guid id, Guid checklistItemId, [FromBody] UpdateChecklistItemCompletionDto dto)
+    {
+        await EnsureTaskAccessAsync(id);
+        var item = await _service.UpdateChecklistItemCompletion(id, checklistItemId, dto.IsCompleted ?? false);
+        return Ok(ApiResponseDto<ChecklistItem>.Ok(item, "Checklist item updated"));
     }
 
     private bool HasElevatedAccess()

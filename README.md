@@ -8,7 +8,7 @@
   - [x] Admin / Manager / User
 - [x] Ownership check (user can access only their tasks)
 - [x] Password hashing (BCrypt)
-- [ ] Refresh token *(optional but strong)*
+- [ ] Refresh token _(optional but strong)_
 
 ---
 
@@ -33,11 +33,11 @@
 
 ### 🔥 ADD THIS (VERY IMPORTANT)
 
-- [ ] Priority (Low / Medium / High)
-- [ ] Due date
+- [x] Priority (Low / Medium / High)
+- [x] Due date
 
-- [ ] Pagination (`?page=1&pageSize=10`)
-- [ ] Sorting (`?sortBy=createdAt`)
+- [x] Pagination (`?page=1&pageSize=10`)
+- [x] Sorting (`?sortBy=createdAt`)
 
 ---
 
@@ -45,13 +45,14 @@
 
 ### ✅ Comments System
 
-- [ ] Add comment to task
-- [ ] Get task comments
+- [x] Add comment to task
+- [x] Get task comments
 
 - [x] Count tasks per user
 - [x] Active tasks
 - [x] Completed tasks
 - [x] Overdue tasks (optional but impressive)
+
 ### ✅ Activity Log (VERY IMPORTANT)
 
 - [ ] Track:
@@ -64,14 +65,15 @@
 - [x] Completed tasks
 - [x] Overdue tasks (optional but impressive)
 
-- [ ] Task checklist items
-- [ ] Mark complete/incomplete
+- [x] Task checklist items
+- [x] Mark complete/incomplete
 
 - [x] Tasks per user
 - [x] Pending vs completed
 - [x] Workload distribution
 - [x] Total tasks
 - [x] Total users
+
 ---
 
 ## 👥 Workload & Dashboard
@@ -131,6 +133,7 @@ Assign user with least tasks
 - [x] POST `/project`
 - [x] PUT `/project/:id`
 - [x] DELETE `/project/:id`
+
 ---
 
 # 🧠 Backend Must-Haves (KEEP CLEAN)
@@ -183,11 +186,12 @@ Add:
   - [ ] Resource ownership
 - [x] Validation (FluentValidation)
 - [ ] Logging (Serilog or basic)
-- [X] CORS
-- [X] Exception middleware
+- [x] CORS
+- [x] Exception middleware
+
 ```text
 GET    /tasks/:id
-GET    /tasks?status=&assignedTo=&page=
+GET    /tasks?status=&assignedTo=&page=&pageSize=&sortBy=
 POST   /tasks/:id/comments
 GET    /tasks/:id/comments
 GET    /activity
@@ -197,11 +201,12 @@ GET    /activity
 
 # ⚔️ Team Split (FIXED)
 
-- [ ] Pagination + filtering (`?status=todo&assignedTo=5&page=1&pageSize=10`)
+- [x] Pagination + filtering (`?status=todo&assignedTo=5&page=1&pageSize=10`)
 - [ ] Seeding (test data)
 - [ ] API versioning (`/api/v1`)
 - [x] Rate limiting
 - [x] Soft delete
+
 ## 🧠 YOU (CORE / HARD)
 
 - Auth + JWT
@@ -245,7 +250,7 @@ If you complete:
 - [ ] SignalR integration
 - [ ] Activity log system
 - [ ] Logging (Serilog)
-- [ ] Testing (xUnit)
+- [x] Testing (xUnit)
 
 ### 🧑‍💻 Teammate (Easy / Safe / Visible)
 
@@ -263,14 +268,14 @@ If you complete:
 - [x] Active tasks
 - [x] Completed tasks
 - [x] Overdue tasks
-- [ ] Pagination
-- [ ] Combine filtering + pagination
+- [x] Pagination
+- [x] Combine filtering + pagination
 - [ ] Backend → Render
 - [ ] DB → PostgreSQL
 - [ ] Basic env setup
 - [ ] Seeding (5 users / 20 tasks / 2 projects)
 - [ ] Basic notifications
-- [ ] Priority field
+- [x] Priority field
 
 👉 You already beat **80–90% students**
 
@@ -290,16 +295,16 @@ These 3:
 
 ## 1) Task Checklists / Subtasks
 
-- [ ] Add `ChecklistItem` entity linked to `TaskItem`
-- [ ] Add checklist CRUD endpoints
-- [ ] Mark checklist items complete/incomplete
-- [ ] Keep checklist order
+- [x] Add `ChecklistItem` entity linked to `TaskItem`
+- [x] Add checklist CRUD endpoints
+- [x] Mark checklist items complete/incomplete
+- [x] Keep checklist order
 - [ ] Show task `% complete` rollup
 
 ## 2) Comments / Activity Feed / Audit Log
 
-- [ ] Add comments per task
-- [ ] Get task comments
+- [x] Add comments per task
+- [x] Get task comments
 - [ ] Track activity history for task changes
 - [ ] Store audit logs for admin/compliance
 
@@ -312,8 +317,8 @@ These 3:
 
 ## 4) Pagination + Sorting + Search
 
-- [ ] Add paging to `GET /tasks`
-- [ ] Add sorting by due date, priority, and created date
+- [x] Add paging to `GET /tasks`
+- [x] Add sorting by due date, priority, and created date
 - [ ] Add search by title and description
 - [ ] Keep filtering + pagination together
 
