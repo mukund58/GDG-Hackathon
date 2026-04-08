@@ -64,6 +64,11 @@ public class TaskService : ITaskService
             .AsNoTracking()
             .AsQueryable();
 
+        if (query.ProjectIds is { Count: > 0 })
+            taskQuery = taskQuery.Where(x => query.ProjectIds.Contains(x.ProjectId));
+        else if (query.ProjectIds is { Count: 0 })
+            taskQuery = taskQuery.Where(_ => false);
+
         // Apply filters
         if (!string.IsNullOrEmpty(query.Status))
             taskQuery = taskQuery.Where(x => x.Status == query.Status);

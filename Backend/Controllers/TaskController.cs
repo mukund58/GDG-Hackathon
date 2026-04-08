@@ -48,7 +48,14 @@ public class TaskController : ControllerBase
         [FromQuery] string? sortBy = null,
         [FromQuery] bool sortDescending = false)
     {
-        assignedTo = EnforceOwnershipFilter(assignedTo);
+        List<Guid>? projectIds = null;
+
+        if (!HasElevatedAccess())
+        {
+            var currentUserId = GetCurrentUserId();
+            var accessibleProjects = await _projectService.GetAccessibleProjects(currentUserId, elevatedAccess: false);
+            projectIds = accessibleProjects.Select(project => project.Id).ToList();
+        }
 
         var query = new TaskQueryDto
         {
@@ -56,6 +63,7 @@ public class TaskController : ControllerBase
             PageSize = pageSize,
             Status = status,
             AssignedTo = assignedTo,
+            ProjectIds = projectIds,
             SortBy = sortBy,
             SortDescending = sortDescending
         };
@@ -73,7 +81,7 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskWrite")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTaskDto dto)
     {
-        await EnsureTaskAccessAsync(id);
+        await EnsureTaskWriteAccessAsync(id);
         var task = await _service.Update(id, dto, GetCurrentUserId());
         return Ok(ApiResponseDto<Backend.Models.Entities.TaskItem>.Ok(task, "Task updated"));
     }
@@ -82,7 +90,7 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskWrite")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await EnsureTaskAccessAsync(id);
+        await EnsureTaskWriteAccessAsync(id);
         await _service.Delete(id);
         return Ok(ApiResponseDto<object>.Ok(null, "Task deleted"));
     }
@@ -91,7 +99,7 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskRead")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var task = await EnsureTaskAccessAsync(id);
+        var task = await EnsureTaskReadAccessAsync(id);
         return Ok(ApiResponseDto<Backend.Models.Entities.TaskItem>.Ok(task, "Task retrieved"));
     }
 
@@ -99,7 +107,7 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskWrite")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateTaskStatusDto dto)
     {
-        await EnsureTaskAccessAsync(id);
+        await EnsureTaskWriteAccessAsync(id);
         var task = await _service.UpdateStatus(id, dto.Status, GetCurrentUserId());
         return Ok(ApiResponseDto<Backend.Models.Entities.TaskItem>.Ok(task, "Task status updated"));
     }
@@ -108,7 +116,7 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskWrite")]
     public async Task<IActionResult> Assign(Guid id, [FromBody] AssignTaskDto dto)
     {
-        await EnsureTaskAccessAsync(id);
+        await EnsureTaskWriteAccessAsync(id);
         var task = await _service.Assign(id, dto.UserId, GetCurrentUserId());
         return Ok(ApiResponseDto<Backend.Models.Entities.TaskItem>.Ok(task, "Task assigned"));
     }
@@ -117,7 +125,7 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskRead")]
     public async Task<IActionResult> GetActivity(Guid id)
     {
-        await EnsureTaskAccessAsync(id);
+        await EnsureTaskReadAccessAsync(id);
         var activity = await _service.GetActivity(id);
         return Ok(ApiResponseDto<List<TaskActivity>>.Ok(activity, "Task activity retrieved"));
     }
@@ -126,7 +134,7 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskRead")]
     public async Task<IActionResult> GetChecklist(Guid id)
     {
-        await EnsureTaskAccessAsync(id);
+        await EnsureTaskReadAccessAsync(id);
         var items = await _service.GetChecklistItems(id);
         return Ok(ApiResponseDto<List<ChecklistItem>>.Ok(items, "Task checklist retrieved"));
     }
@@ -135,7 +143,7 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskWrite")]
     public async Task<IActionResult> AddChecklistItem(Guid id, [FromBody] CreateChecklistItemDto dto)
     {
-        await EnsureTaskAccessAsync(id);
+        await EnsureTaskWriteAccessAsync(id);
         var item = await _service.AddChecklistItem(id, dto);
         return Ok(ApiResponseDto<ChecklistItem>.Ok(item, "Checklist item added"));
     }
@@ -144,7 +152,7 @@ public class TaskController : ControllerBase
     [Authorize(Policy = "TaskWrite")]
     public async Task<IActionResult> UpdateChecklistItemCompletion(Guid id, Guid checklistItemId, [FromBody] UpdateChecklistItemCompletionDto dto)
     {
-        await EnsureTaskAccessAsync(id);
+        await EnsureTaskWriteAccessAsync(id);
         var item = await _service.UpdateChecklistItemCompletion(id, checklistItemId, dto.IsCompleted ?? false);
         return Ok(ApiResponseDto<ChecklistItem>.Ok(item, "Checklist item updated"));
     }
@@ -164,15 +172,7 @@ public class TaskController : ControllerBase
         return userId;
     }
 
-    private Guid? EnforceOwnershipFilter(Guid? assignedTo)
-    {
-        if (HasElevatedAccess())
-            return assignedTo;
-
-        return GetCurrentUserId();
-    }
-
-    private async Task<TaskItem> EnsureTaskAccessAsync(Guid taskId)
+    private async Task<TaskItem> EnsureTaskReadAccessAsync(Guid taskId)
     {
         var task = await _service.GetById(taskId);
 
@@ -180,9 +180,26 @@ public class TaskController : ControllerBase
             return task;
 
         var currentUserId = GetCurrentUserId();
+        var canRead = await _projectService.HasReadAccess(task.ProjectId, currentUserId, elevatedAccess: false);
 
-        if (task.AssignedUserId != currentUserId)
-            throw new UnauthorizedAccessException("You can only access your own tasks");
+        if (!canRead)
+            throw new UnauthorizedAccessException("You do not have read access to this task");
+
+        return task;
+    }
+
+    private async Task<TaskItem> EnsureTaskWriteAccessAsync(Guid taskId)
+    {
+        var task = await _service.GetById(taskId);
+
+        if (HasElevatedAccess())
+            return task;
+
+        var currentUserId = GetCurrentUserId();
+        var canWrite = await _projectService.HasWriteAccess(task.ProjectId, currentUserId, elevatedAccess: false);
+
+        if (!canWrite)
+            throw new UnauthorizedAccessException("You do not have write access to this task");
 
         return task;
     }

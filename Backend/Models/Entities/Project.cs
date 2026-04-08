@@ -8,6 +8,8 @@ public class Project
 
     public string Description { get; set; }= string.Empty;
 
+    public DateTime? DueDate { get; set; }
+
     public Guid? OwnerUserId { get; set; }
     public User? OwnerUser { get; set; }
 }

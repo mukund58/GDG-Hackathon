@@ -88,9 +88,94 @@ public class ProjectController : ControllerBase
         return Ok(ApiResponseDto<object>.Ok(null, "Project deleted"));
     }
 
+    [HttpGet("{id}/members")]
+    [Authorize(Policy = "ProjectRead")]
+    public async Task<IActionResult> GetMembers(Guid id)
+    {
+        if (!await _service.ProjectExists(id))
+            return NotFound(ApiResponseDto<object>.Fail("Project not found"));
+
+        var canRead = await _service.HasReadAccess(id, GetCurrentUserId(), HasElevatedAccess());
+        if (!canRead)
+            return Forbid();
+
+        var members = await _service.GetMembers(id);
+        return Ok(ApiResponseDto<List<ProjectMemberDto>>.Ok(members, "Project members retrieved"));
+    }
+
+    [HttpPost("{id}/members")]
+    [Authorize(Policy = "ProjectWrite")]
+    public async Task<IActionResult> AddMember(Guid id, [FromBody] AddProjectMemberDto dto)
+    {
+        if (!await _service.ProjectExists(id))
+            return NotFound(ApiResponseDto<object>.Fail("Project not found"));
+
+        var currentUserId = GetCurrentUserId();
+        var canManage = await _service.HasManageAccess(id, currentUserId, HasElevatedAccess());
+        if (!canManage)
+            return Forbid();
+
+        try
+        {
+            var member = await _service.AddMember(id, dto, currentUserId);
+            return Ok(ApiResponseDto<ProjectMemberDto>.Ok(member, "Project member added"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponseDto<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponseDto<object>.Fail(ex.Message));
+        }
+    }
+
+    [HttpGet("{id}/invitations")]
+    [Authorize(Policy = "ProjectRead")]
+    public async Task<IActionResult> GetInvitations(Guid id)
+    {
+        if (!await _service.ProjectExists(id))
+            return NotFound(ApiResponseDto<object>.Fail("Project not found"));
+
+        var currentUserId = GetCurrentUserId();
+        var canManage = await _service.HasManageAccess(id, currentUserId, HasElevatedAccess());
+        if (!canManage)
+            return Forbid();
+
+        var invitations = await _service.GetInvitations(id);
+        return Ok(ApiResponseDto<List<ProjectInvitationDto>>.Ok(invitations, "Project invitations retrieved"));
+    }
+
+    [HttpPost("{id}/invitations")]
+    [Authorize(Policy = "ProjectWrite")]
+    public async Task<IActionResult> CreateInvitation(Guid id, [FromBody] CreateProjectInvitationDto dto)
+    {
+        if (!await _service.ProjectExists(id))
+            return NotFound(ApiResponseDto<object>.Fail("Project not found"));
+
+        var currentUserId = GetCurrentUserId();
+        var canManage = await _service.HasManageAccess(id, currentUserId, HasElevatedAccess());
+        if (!canManage)
+            return Forbid();
+
+        try
+        {
+            var invitation = await _service.CreateInvitation(id, dto, currentUserId);
+            return Ok(ApiResponseDto<ProjectInvitationDto>.Ok(invitation, "Project invitation created"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponseDto<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponseDto<object>.Fail(ex.Message));
+        }
+    }
+
     private bool HasElevatedAccess()
     {
-        return User.IsInRole("Admin") || User.IsInRole("Manager");
+        return User.IsInRole("Admin");
     }
 
     private Guid GetCurrentUserId()

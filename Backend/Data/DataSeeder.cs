@@ -22,6 +22,7 @@ public class DataSeeder
 
         var users = await EnsureUsersAsync(targetUsers, options.DefaultPassword, cancellationToken);
         var projects = await EnsureProjectsAsync(targetProjects, users, cancellationToken);
+        await EnsureProjectOwnerMembershipsAsync(projects, cancellationToken);
         await EnsureTasksAsync(targetTasks, users, projects, cancellationToken);
 
         var userCount = await _context.Users.CountAsync(cancellationToken);
@@ -111,6 +112,35 @@ public class DataSeeder
 
         _logger.LogInformation("Projects seeded. Current count: {ProjectCount}", projects.Count);
         return projects;
+    }
+
+    private async Task EnsureProjectOwnerMembershipsAsync(IReadOnlyList<Project> projects, CancellationToken cancellationToken)
+    {
+        foreach (var project in projects)
+        {
+            if (!project.OwnerUserId.HasValue)
+                continue;
+
+            var ownerUserId = project.OwnerUserId.Value;
+
+            var alreadyMember = await _context.ProjectMembers
+                .AnyAsync(pm => pm.ProjectId == project.Id && pm.UserId == ownerUserId, cancellationToken);
+
+            if (alreadyMember)
+                continue;
+
+            _context.ProjectMembers.Add(new ProjectMember
+            {
+                ProjectId = project.Id,
+                UserId = ownerUserId,
+                Role = "Admin",
+                AddedByUserId = ownerUserId,
+                AddedAt = DateTime.UtcNow
+            });
+        }
+
+        if (_context.ChangeTracker.HasChanges())
+            await _context.SaveChangesAsync(cancellationToken);
     }
 
     private async Task EnsureTasksAsync(int targetTasks, IReadOnlyList<User> users, IReadOnlyList<Project> projects, CancellationToken cancellationToken)
