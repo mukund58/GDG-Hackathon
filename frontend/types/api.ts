@@ -13,6 +13,9 @@ export type PaginatedResponse<T> = {
   items: T[];
   page: number;
   pageSize: number;
-  totalCount: number;
+  total: number;
   totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  totalCount?: number;
 };

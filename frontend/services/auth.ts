@@ -1,5 +1,7 @@
 import { apiClient } from "@/services/api/client";
 import { clearAuthToken, setAuthToken } from "@/services/auth/token-store";
+import { getSessionUserFromToken } from "@/lib/auth/jwt";
+import { useAuthStore } from "@/store/authStore";
 import type { ApiResponse } from "@/types/api";
 import type { AuthPayload, LoginInput, RegisterInput } from "@/types/auth";
 
@@ -9,6 +11,11 @@ async function unwrapAuthResponse(path: string, payload: LoginInput | RegisterIn
 
   if (authPayload?.token) {
     setAuthToken(authPayload.token);
+
+    const sessionUser = getSessionUserFromToken(authPayload.token);
+    if (sessionUser) {
+      useAuthStore.getState().setSessionFromToken(authPayload.token, sessionUser);
+    }
   }
 
   return authPayload;
@@ -24,4 +31,5 @@ export function register(payload: RegisterInput) {
 
 export function logout() {
   clearAuthToken();
+  useAuthStore.getState().clearSession();
 }

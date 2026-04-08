@@ -1,13 +1,22 @@
-import type { AuthUser } from "@/types/auth";
+import { create } from "zustand";
+import type { SessionUser } from "@/lib/auth/jwt";
 
-export type AuthStoreState = {
+type AuthStoreState = {
   token: string | null;
-  user: AuthUser | null;
+  user: SessionUser | null;
   isAuthenticated: boolean;
+  setSessionFromToken: (token: string, user: SessionUser) => void;
+  clearSession: () => void;
 };
 
-export const authStoreInitialState: AuthStoreState = {
+export const useAuthStore = create<AuthStoreState>((set) => ({
   token: null,
   user: null,
   isAuthenticated: false,
-};
+  setSessionFromToken: (token, user) => {
+    set({ token, user, isAuthenticated: true });
+  },
+  clearSession: () => {
+    set({ token: null, user: null, isAuthenticated: false });
+  },
+}));

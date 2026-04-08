@@ -1,4 +1,6 @@
 import { getAuthToken } from "@/services/auth/token-store";
+import { clearAuthToken } from "@/services/auth/token-store";
+import { useAuthStore } from "@/store/authStore";
 import type { QueryParams } from "@/types/api";
 
 const FALLBACK_BASE_URL = "http://localhost:5000";
@@ -80,6 +82,11 @@ async function request<T>(path: string, options: ApiRequestOptions = {}) {
   const payload = isJson ? await response.json().catch(() => null) : await response.text();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearAuthToken();
+      useAuthStore.getState().clearSession();
+    }
+
     throw new ApiError(getErrorMessage(payload, response.status), response.status, payload);
   }
 

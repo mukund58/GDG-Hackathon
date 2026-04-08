@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ChartColumnIncreasing, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
+import { ArrowRight, ChartColumnIncreasing, ShieldCheck, UsersRound } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";

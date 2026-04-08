@@ -52,77 +52,77 @@ Target structure:
 - [x] Create register page at /auth/register
 - [x] Add JWT storage utility (current implementation uses local storage)
 - [x] Auto-attach JWT in API client
-- [ ] Add redirect if already authenticated
-- [ ] Add role-based UI rendering
-- [ ] Add invalid credential and loading state UX
+- [x] Add redirect if already authenticated
+- [x] Add role-based UI rendering
+- [x] Add invalid credential and loading state UX
 - [ ] Evaluate move to httpOnly cookie flow if backend supports it
 
 ## 3. Dashboard (WOW Factor)
 
-- [ ] Create dashboard page and app layout with sidebar + topbar
-- [ ] Show total tasks
-- [ ] Show completed tasks
-- [ ] Show active tasks
-- [ ] Show overdue tasks
-- [ ] Show tasks per user chart
-- [ ] Show workload distribution chart
-- [ ] Integrate chart library (recharts or chart.js)
+- [x] Create dashboard page and app layout with sidebar + topbar
+- [x] Show total tasks
+- [x] Show completed tasks
+- [x] Show active tasks
+- [x] Show overdue tasks
+- [x] Show tasks per user chart
+- [x] Show workload distribution chart
+- [x] Integrate chart library (recharts or chart.js)
 
 ## 4. Task Management UI
 
 ### Task List (/tasks)
 
-- [ ] Build task table view
-- [ ] Add optional Kanban toggle (bonus)
-- [ ] Add filters: status + assigned user
-- [ ] Add pagination
-- [ ] Add sorting
-- [ ] Show card metadata: title, priority, status, due date
+- [x] Build task table view
+- [x] Add optional Kanban toggle (bonus)
+- [x] Add filters: status + assigned user
+- [x] Add pagination
+- [x] Add sorting
+- [x] Show card metadata: title, priority, status, due date
 
 ### Task Details (/task/[id])
 
-- [ ] Show task info block
-- [ ] Show assigned user
-- [ ] Add status dropdown update
-- [ ] Add priority dropdown update
-- [ ] Add due date update
+- [x] Show task info block
+- [x] Show assigned user
+- [x] Add status dropdown update
+- [x] Add priority dropdown update
+- [x] Add due date update
 
 ### Checklist and Comments
 
-- [ ] Add checklist item create
-- [ ] Add checklist toggle complete
-- [ ] Add checklist progress bar
-- [ ] Add comment create
-- [ ] Add comment list
-- [ ] Add activity log section (if backend activity endpoint is available)
+- [x] Add checklist item create
+- [x] Add checklist toggle complete
+- [x] Add checklist progress bar
+- [x] Add comment create
+- [x] Add comment list
+- [x] Add activity log section (if backend activity endpoint is available)
 
 ## 5. Project Management
 
-- [ ] Create projects list page at /projects
-- [ ] Create project detail page at /projects/[id]
-- [ ] Create project flow
-- [ ] List projects flow
-- [ ] Show project tasks flow
+- [x] Create projects list page at /projects
+- [x] Create project detail page at /projects/[id]
+- [x] Create project flow
+- [x] List projects flow
+- [x] Show project tasks flow
 
 ## 6. AI Suggestion UI
 
-- [ ] Add Suggest Assignment button
-- [ ] Show suggested user
-- [ ] Show suggested priority
-- [ ] Show explanation text
-- [ ] Present in modal or side panel
+- [x] Add Suggest Assignment button
+- [x] Show suggested user
+- [x] Show suggested priority
+- [x] Show explanation text
+- [x] Present in modal or side panel
 
 ## 7. Search and Filter UX
 
-- [ ] Add debounced search input
-- [ ] Combine search + status + assigned user filters
-- [ ] Keep query-state URL synced
-- [ ] Support query shape like status, assignedTo, search, page
+- [x] Add debounced search input
+- [x] Combine search + status + assigned user filters
+- [x] Keep query-state URL synced
+- [x] Support query shape like status, assignedTo, search, page
 
 ## 8. Notifications (Phase 2)
 
-- [ ] Add toast notifications for assignment/comment/task actions
-- [ ] Integrate react-hot-toast
+- [x] Add toast notifications for assignment/comment/task actions
+- [x] Integrate react-hot-toast
 
 ## 9. UI Library Strategy
 
@@ -132,42 +132,42 @@ Target structure:
 
 ## 10. State Management
 
-- [ ] Add Zustand for auth state
-- [ ] Add TanStack Query for task data, caching, and refetch
-- [ ] Replace ad hoc fetching in pages with query hooks
+- [x] Add Zustand for auth state
+- [x] Add TanStack Query for task data, caching, and refetch
+- [x] Replace ad hoc fetching in pages with query hooks
 
 ## 11. API Integration Standards
 
 - [x] Centralized API client exists
-- [ ] Add auth/logout handling on 401 responses
-- [ ] Add service modules split by domain (auth, task, project, dashboard)
-- [ ] Keep response typing consistent across services
+- [x] Add auth/logout handling on 401 responses
+- [x] Add service modules split by domain (auth, task, project, dashboard)
+- [x] Keep response typing consistent across services
 
 ## 12. UX Quality Bar
 
 - [x] Skeleton loaders available
 - [x] Empty states available
 - [x] Error states available
-- [ ] Use optimistic updates for fast actions (status changes)
-- [ ] Confirm destructive actions before delete
+- [x] Use optimistic updates for fast actions (status changes)
+- [x] Confirm destructive actions before delete
 - [ ] Avoid spinner-only pages when data is loading
 
 ## 13. MVP Frontend Checklist (Must Build First)
 
-- [ ] Auth (login/register)
-- [ ] Dashboard
-- [ ] Task list with filter + pagination
-- [ ] Task detail page
-- [ ] Create/update task
-- [ ] Comments
-- [ ] Checklist
+- [x] Auth (login/register)
+- [x] Dashboard
+- [x] Task list with filter + pagination
+- [x] Task detail page
+- [x] Create/update task
+- [x] Comments
+- [x] Checklist
 
 ## 14. Add After MVP
 
-- [ ] Kanban board
-- [ ] Activity log UI
-- [ ] AI suggestion UI
-- [ ] Notifications
+- [x] Kanban board
+- [x] Activity log UI
+- [x] AI suggestion UI
+- [x] Notifications
 
 ---
 
