@@ -1,0 +1,99 @@
+name: Azure App Service CD
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+env:
+  ACR_LOGIN_SERVER: ${{ secrets.ACR_NAME }}.azurecr.io
+  BACKEND_IMAGE_NAME: taskflow-backend
+  FRONTEND_IMAGE_NAME: taskflow-frontend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: ACR login
+        run: az acr login --name "${{ secrets.ACR_NAME }}"
+
+      - name: Build and push backend image
+        run: |
+          BACKEND_IMAGE="${ACR_LOGIN_SERVER}/${BACKEND_IMAGE_NAME}:${GITHUB_SHA}"
+          docker build -f Backend/Dockerfile -t "$BACKEND_IMAGE" Backend
+          docker push "$BACKEND_IMAGE"
+          echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> "$GITHUB_ENV"
+
+      - name: Build and push frontend image
+        run: |
+          FRONTEND_IMAGE="${ACR_LOGIN_SERVER}/${FRONTEND_IMAGE_NAME}:${GITHUB_SHA}"
+          docker build \
+            -f frontend/Dockerfile \
+            --build-arg NEXT_PUBLIC_API_BASE_URL="${{ secrets.FRONTEND_API_BASE_URL }}" \
+            --build-arg NEXT_PUBLIC_API_PATH_PREFIX="${{ vars.NEXT_PUBLIC_API_PATH_PREFIX || '/api/v1' }}" \
+            --build-arg NEXT_PUBLIC_USE_AUTH_COOKIES="${{ vars.NEXT_PUBLIC_USE_AUTH_COOKIES || 'false' }}" \
+            -t "$FRONTEND_IMAGE" \
+            frontend
+          docker push "$FRONTEND_IMAGE"
+          echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> "$GITHUB_ENV"
+
+      - name: Configure backend app settings
+        run: |
+          az webapp config appsettings set \
+            --name "${{ secrets.AZURE_BACKEND_WEBAPP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --settings \
+              WEBSITES_WEB_CONTAINER_NAME=api \
+              WEBSITES_PORT=8080 \
+              WEBSITES_ENABLE_APP_SERVICE_STORAGE=true \
+              DOCKER_REGISTRY_SERVER_URL="https://${ACR_LOGIN_SERVER}" \
+              DOCKER_REGISTRY_SERVER_USERNAME="${{ secrets.ACR_USERNAME }}" \
+              DOCKER_REGISTRY_SERVER_PASSWORD="${{ secrets.ACR_PASSWORD }}" \
+              BACKEND_IMAGE="$BACKEND_IMAGE" \
+              POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
+              POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+              POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+              REDIS_CONNECTION_STRING="${{ secrets.REDIS_CONNECTION_STRING }}"
+
+      - name: Deploy backend multi-container app
+        run: |
+          az webapp config container set \
+            --name "${{ secrets.AZURE_BACKEND_WEBAPP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --multicontainer-config-type compose \
+            --multicontainer-config-file Backend/docker-compose.azure.yml
+          az webapp restart \
+            --name "${{ secrets.AZURE_BACKEND_WEBAPP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}"
+
+      - name: Configure and deploy frontend web app
+        run: |
+          az webapp config appsettings set \
+            --name "${{ secrets.AZURE_FRONTEND_WEBAPP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --settings WEBSITES_PORT=3000
+
+          az webapp config container set \
+            --name "${{ secrets.AZURE_FRONTEND_WEBAPP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --docker-custom-image-name "$FRONTEND_IMAGE" \
+            --docker-registry-server-url "https://${ACR_LOGIN_SERVER}" \
+            --docker-registry-server-user "${{ secrets.ACR_USERNAME }}" \
+            --docker-registry-server-password "${{ secrets.ACR_PASSWORD }}"
+
+          az webapp restart \
+            --name "${{ secrets.AZURE_FRONTEND_WEBAPP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}"
