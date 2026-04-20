@@ -261,3 +261,46 @@ Run backend tests:
 ```bash
 dotnet test GDG-Hackathon.sln
 ```
+
+## Azure App Service CD (Backend + Frontend + PostgreSQL)
+
+This repository now includes:
+
+- Frontend production Docker image: `frontend/Dockerfile`
+- Backend + PostgreSQL compose file for Azure App Service: `Backend/docker-compose.azure.yml`
+- CD workflow: `.github/workflows/azure-appservice-cd.yml`
+
+### Required Azure resources
+
+- Azure Container Registry (ACR)
+- 2 Linux Web Apps:
+  - Backend app service (`AZURE_BACKEND_WEBAPP_NAME`)
+  - Frontend app service (`AZURE_FRONTEND_WEBAPP_NAME`)
+
+### Required GitHub secrets
+
+- `AZURE_CREDENTIALS` (service principal JSON for `azure/login`)
+- `AZURE_RESOURCE_GROUP`
+- `AZURE_BACKEND_WEBAPP_NAME`
+- `AZURE_FRONTEND_WEBAPP_NAME`
+- `ACR_NAME`
+- `ACR_USERNAME`
+- `ACR_PASSWORD`
+- `FRONTEND_API_BASE_URL` (example: `https://<backend-app>.azurewebsites.net`)
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `REDIS_CONNECTION_STRING` (optional; set empty if unused)
+
+### Optional GitHub repository variables
+
+- `NEXT_PUBLIC_API_PATH_PREFIX` (default: `/api/v1`)
+- `NEXT_PUBLIC_USE_AUTH_COOKIES` (default: `false`)
+
+### Deployment behavior
+
+On push to `main` or `master` (or manual run), the workflow:
+
+1. Builds and pushes backend and frontend Docker images to ACR.
+2. Configures backend app settings and deploys backend + PostgreSQL using `Backend/docker-compose.azure.yml`.
+3. Configures and deploys frontend container to frontend app service.
