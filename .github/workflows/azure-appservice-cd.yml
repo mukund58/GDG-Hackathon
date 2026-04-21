@@ -22,21 +22,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 🔐 Azure Login
       - name: Azure login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: ACR login
-        run: az acr login --name "${{ secrets.ACR_NAME }}"
+      # 🔐 Docker Login (FIXED)
+      - name: Docker login to ACR
+        run: |
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_LOGIN_SERVER }} \
+            -u ${{ secrets.ACR_USERNAME }} \
+            --password-stdin
 
+      # 🐳 Build & Push Backend
       - name: Build and push backend image
         run: |
           BACKEND_IMAGE="${ACR_LOGIN_SERVER}/${BACKEND_IMAGE_NAME}:${GITHUB_SHA}"
           docker build -f Backend/Dockerfile -t "$BACKEND_IMAGE" Backend
           docker push "$BACKEND_IMAGE"
-          echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> "$GITHUB_ENV"
+          echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> $GITHUB_ENV
 
+      # 🐳 Build & Push Frontend
       - name: Build and push frontend image
         run: |
           FRONTEND_IMAGE="${ACR_LOGIN_SERVER}/${FRONTEND_IMAGE_NAME}:${GITHUB_SHA}"
@@ -48,8 +55,9 @@ jobs:
             -t "$FRONTEND_IMAGE" \
             frontend
           docker push "$FRONTEND_IMAGE"
-          echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> "$GITHUB_ENV"
+          echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> $GITHUB_ENV
 
+      # ⚙️ Backend Config
       - name: Configure backend app settings
         run: |
           az webapp config appsettings set \
@@ -68,6 +76,7 @@ jobs:
               POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
               REDIS_CONNECTION_STRING="${{ secrets.REDIS_CONNECTION_STRING }}"
 
+      # 🚀 Deploy Backend (Multi-container)
       - name: Deploy backend multi-container app
         run: |
           az webapp config container set \
@@ -75,10 +84,12 @@ jobs:
             --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
             --multicontainer-config-type compose \
             --multicontainer-config-file Backend/docker-compose.azure.yml
+
           az webapp restart \
             --name "${{ secrets.AZURE_BACKEND_WEBAPP_NAME }}" \
             --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}"
 
+      # 🌍 Deploy Frontend
       - name: Configure and deploy frontend web app
         run: |
           az webapp config appsettings set \
