@@ -156,27 +156,27 @@ if (string.IsNullOrWhiteSpace(connectionString))
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+// builder.Services.AddDbContext<AppDbContext>(options =>
+//    options.UseNpgsql(connectionString));
 
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
-builder.Services.AddScoped<IProjectService, ProjectService>();
-builder.Services.AddScoped<ITaskService, TaskService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IProfileService, ProfileService>();
-builder.Services.AddScoped<ISettingsService, SettingsService>();
-builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddScoped<IChecklistService, ChecklistService>();
-builder.Services.AddScoped<ILabelService, LabelService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<ITaskWatcherService, TaskWatcherService>();
-builder.Services.AddScoped<ITaskAttachmentService, TaskAttachmentService>();
-builder.Services.AddScoped<DataSeeder>();
-builder.Services.AddScoped<IValidator<CreateTaskDto>, CreateTaskDtoValidator>();
-builder.Services.AddScoped<IValidator<UpdateTaskStatusDto>, UpdateTaskStatusDtoValidator>();
-builder.Services.AddScoped<IValidator<AssignTaskDto>, AssignTaskDtoValidator>();
+// builder.Services.AddScoped<IAuthService, AuthService>();
+// builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+// builder.Services.AddScoped<IProjectService, ProjectService>();
+// builder.Services.AddScoped<ITaskService, TaskService>();
+// builder.Services.AddScoped<IUserService, UserService>();
+// builder.Services.AddScoped<IProfileService, ProfileService>();
+// builder.Services.AddScoped<ISettingsService, SettingsService>();
+// builder.Services.AddScoped<IDashboardService, DashboardService>();
+// builder.Services.AddScoped<ICommentService, CommentService>();
+// builder.Services.AddScoped<IChecklistService, ChecklistService>();
+// builder.Services.AddScoped<ILabelService, LabelService>();
+// builder.Services.AddScoped<INotificationService, NotificationService>();
+// builder.Services.AddScoped<ITaskWatcherService, TaskWatcherService>();
+// builder.Services.AddScoped<ITaskAttachmentService, TaskAttachmentService>();
+// builder.Services.AddScoped<DataSeeder>();
+// builder.Services.AddScoped<IValidator<CreateTaskDto>, CreateTaskDtoValidator>();
+// builder.Services.AddScoped<IValidator<UpdateTaskStatusDto>, UpdateTaskStatusDtoValidator>();
+// builder.Services.AddScoped<IValidator<AssignTaskDto>, AssignTaskDtoValidator>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -234,7 +234,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.MapGet("/", () => "Backend is running 🚀");
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
