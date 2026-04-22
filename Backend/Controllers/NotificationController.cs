@@ -9,7 +9,6 @@ using System.Security.Claims;
 [ApiController]
 [Asp.Versioning.ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/notifications")]
-[Route("api/notifications")]
 [Authorize]
 public class NotificationController : ControllerBase
 {

@@ -9,7 +9,6 @@ using System.Security.Claims;
 [ApiController]
 [Asp.Versioning.ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/projects/{projectId}/labels")]
-[Route("api/projects/{projectId}/labels")]
 [Authorize]
 public class LabelController : ControllerBase
 {

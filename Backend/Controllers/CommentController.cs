@@ -10,7 +10,6 @@ using System.Security.Claims;
 [ApiController]
 [Asp.Versioning.ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/tasks/{taskId}/comments")]
-[Route("api/tasks/{taskId}/comments")]
 [Authorize]
 public class CommentController : ControllerBase
 {
