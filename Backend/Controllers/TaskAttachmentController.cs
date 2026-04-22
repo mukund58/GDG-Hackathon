@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.StaticFiles;
 [ApiController]
 [Asp.Versioning.ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/tasks/{taskId}/attachments")]
-[Route("api/tasks/{taskId}/attachments")]
 [Authorize]
 public class TaskAttachmentController : ControllerBase
 {

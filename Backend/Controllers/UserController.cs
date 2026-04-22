@@ -9,7 +9,6 @@ using System.Security.Claims;
 [ApiController]
 [Asp.Versioning.ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/users")]
-[Route("api/users")]
 [Authorize]
 public class UserController : ControllerBase
 {

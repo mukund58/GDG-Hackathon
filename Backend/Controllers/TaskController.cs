@@ -10,7 +10,6 @@ using System.Security.Claims;
 [ApiController]
 [Asp.Versioning.ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/tasks")]
-[Route("api/tasks")]
 [Authorize]
 public class TaskController : ControllerBase
 {

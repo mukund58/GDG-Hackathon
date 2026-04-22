@@ -9,7 +9,6 @@ using System.Security.Claims;
 [ApiController]
 [Asp.Versioning.ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/tasks/{taskId}/checklist")]
-[Route("api/tasks/{taskId}/checklist")]
 [Authorize]
 public class ChecklistController : ControllerBase
 {

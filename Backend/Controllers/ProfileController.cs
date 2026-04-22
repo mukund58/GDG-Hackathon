@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 [Asp.Versioning.ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/profile")]
-[Route("api/profile")]
 [Authorize]
 public class ProfileController : ControllerBase
 {

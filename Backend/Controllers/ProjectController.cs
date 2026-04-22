@@ -9,7 +9,6 @@ using System.Security.Claims;
 [ApiController]
 [Asp.Versioning.ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/projects")]
-[Route("api/projects")]
 [Authorize]
 public class ProjectController : ControllerBase
 {
