@@ -1,4 +1,4 @@
-name: Azure App Service CD
+name: Build and Push Containers
 
 on:
   push:
@@ -13,98 +13,48 @@ env:
   FRONTEND_IMAGE_NAME: taskflow-frontend
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 🔐 Azure Login
       - name: Azure login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 🔐 Docker Login (FIXED)
       - name: Docker login to ACR
         run: |
           echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_LOGIN_SERVER }} \
             -u ${{ secrets.ACR_USERNAME }} \
             --password-stdin
 
-      # 🐳 Build & Push Backend
       - name: Build and push backend image
         run: |
           BACKEND_IMAGE="${ACR_LOGIN_SERVER}/${BACKEND_IMAGE_NAME}:${GITHUB_SHA}"
-          docker build -f Backend/Dockerfile -t "$BACKEND_IMAGE" Backend
-          docker push "$BACKEND_IMAGE"
-          echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> $GITHUB_ENV
+          BACKEND_IMAGE_LATEST="${ACR_LOGIN_SERVER}/${BACKEND_IMAGE_NAME}:latest"
 
-      # 🐳 Build & Push Frontend
+          docker build -f Backend/Dockerfile \
+            -t "$BACKEND_IMAGE" \
+            -t "$BACKEND_IMAGE_LATEST" \
+            Backend
+
+          docker push "$BACKEND_IMAGE"
+          docker push "$BACKEND_IMAGE_LATEST"
+
       - name: Build and push frontend image
         run: |
           FRONTEND_IMAGE="${ACR_LOGIN_SERVER}/${FRONTEND_IMAGE_NAME}:${GITHUB_SHA}"
+          FRONTEND_IMAGE_LATEST="${ACR_LOGIN_SERVER}/${FRONTEND_IMAGE_NAME}:latest"
+
           docker build \
             -f frontend/Dockerfile \
             --build-arg NEXT_PUBLIC_API_BASE_URL="${{ secrets.FRONTEND_API_BASE_URL }}" \
-            --build-arg NEXT_PUBLIC_API_PATH_PREFIX="${{ vars.NEXT_PUBLIC_API_PATH_PREFIX || '/api/v1' }}" \
-            --build-arg NEXT_PUBLIC_USE_AUTH_COOKIES="${{ vars.NEXT_PUBLIC_USE_AUTH_COOKIES || 'false' }}" \
             -t "$FRONTEND_IMAGE" \
+            -t "$FRONTEND_IMAGE_LATEST" \
             frontend
+
           docker push "$FRONTEND_IMAGE"
-          echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> $GITHUB_ENV
-
-      # ⚙️ Backend Config
-      - name: Configure backend app settings
-        run: |
-          az webapp config appsettings set \
-            --name "${{ secrets.AZURE_BACKEND_WEBAPP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-            --settings \
-              WEBSITES_WEB_CONTAINER_NAME=api \
-              WEBSITES_PORT=8080 \
-              WEBSITES_ENABLE_APP_SERVICE_STORAGE=true \
-              DOCKER_REGISTRY_SERVER_URL="https://${ACR_LOGIN_SERVER}" \
-              DOCKER_REGISTRY_SERVER_USERNAME="${{ secrets.ACR_USERNAME }}" \
-              DOCKER_REGISTRY_SERVER_PASSWORD="${{ secrets.ACR_PASSWORD }}" \
-              BACKEND_IMAGE="$BACKEND_IMAGE" \
-              POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
-              POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
-              POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
-              REDIS_CONNECTION_STRING="${{ secrets.REDIS_CONNECTION_STRING }}"
-
-      # 🚀 Deploy Backend (Multi-container)
-      - name: Deploy backend multi-container app
-        run: |
-          az webapp config container set \
-            --name "${{ secrets.AZURE_BACKEND_WEBAPP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-            --multicontainer-config-type compose \
-            --multicontainer-config-file Backend/docker-compose.azure.yml
-
-          az webapp restart \
-            --name "${{ secrets.AZURE_BACKEND_WEBAPP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}"
-
-      # 🌍 Deploy Frontend
-      - name: Configure and deploy frontend web app
-        run: |
-          az webapp config appsettings set \
-            --name "${{ secrets.AZURE_FRONTEND_WEBAPP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-            --settings WEBSITES_PORT=3000
-
-          az webapp config container set \
-            --name "${{ secrets.AZURE_FRONTEND_WEBAPP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-            --docker-custom-image-name "$FRONTEND_IMAGE" \
-            --docker-registry-server-url "https://${ACR_LOGIN_SERVER}" \
-            --docker-registry-server-user "${{ secrets.ACR_USERNAME }}" \
-            --docker-registry-server-password "${{ secrets.ACR_PASSWORD }}"
-
-          az webapp restart \
-            --name "${{ secrets.AZURE_FRONTEND_WEBAPP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}"
+          docker push "$FRONTEND_IMAGE_LATEST"
