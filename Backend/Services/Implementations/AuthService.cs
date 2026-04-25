@@ -24,9 +24,10 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> Register(RegisterDto dto)
     {
+        var normalizedEmail = NormalizeEmail(dto.Email);
         var existingUser = await _context.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Email == dto.Email && !x.IsDeleted);
+            .FirstOrDefaultAsync(x => x.Email == normalizedEmail && !x.IsDeleted);
 
         if (existingUser != null)
         {
@@ -40,7 +41,7 @@ public class AuthService : IAuthService
         var user = new User
         {
             Name = dto.Name,
-            Email = dto.Email,
+            Email = normalizedEmail,
             PasswordHash = BCrypt.HashPassword(dto.Password)
         };
 
@@ -62,9 +63,10 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> Login(LoginDto dto)
     {
+        var normalizedEmail = NormalizeEmail(dto.Email);
         var user = await _context.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Email == dto.Email && !x.IsDeleted);
+            .FirstOrDefaultAsync(x => x.Email == normalizedEmail && !x.IsDeleted);
 
         if (user == null || !BCrypt.Verify(dto.Password, user.PasswordHash))
         {
@@ -120,5 +122,10 @@ public class AuthService : IAuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private static string NormalizeEmail(string email)
+    {
+        return email.Trim().ToLowerInvariant();
     }
 }
