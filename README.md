@@ -210,8 +210,10 @@ This project uses Docker Compose in the Backend folder and starts API + PostgreS
 
    Optional:
 
-   - REDIS_CONNECTION_STRING
-   - SMTP_HOST
+    - REDIS_CONNECTION_STRING
+    - FRONTEND_BASE_URL (local default: `http://localhost:3000`; set explicitly per environment—this deployment uses `https://taskflow.mukund.xyz` in production)
+    - INVITATION_TOKEN_SECRET
+    - SMTP_HOST
    - SMTP_PORT
    - SMTP_USERNAME
    - SMTP_PASSWORD
@@ -291,6 +293,8 @@ This repository now includes:
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
 - `REDIS_CONNECTION_STRING` (optional; set empty if unused)
+- `FRONTEND_BASE_URL` (set to your production frontend URL; for this deployment use `https://taskflow.mukund.xyz`)
+- `INVITATION_TOKEN_SECRET`
 
 ### Optional GitHub repository variables
 
