@@ -112,7 +112,12 @@ builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // JWT Configuration
-var jwtSettings = builder.Configuration.GetSection(JwtSettingsOptions.SectionName).Get<JwtSettingsOptions>() ?? new JwtSettingsOptions();
+var jwtSettings = builder.Configuration.GetSection(JwtSettingsOptions.SectionName).Get<JwtSettingsOptions>();
+if (jwtSettings is null)
+{
+    throw new InvalidOperationException(
+        $"Unable to bind {JwtSettingsOptions.SectionName} configuration. Verify section shape and environment variable naming.");
+}
 var jwtValidationErrors = jwtSettings.Validate().ToArray();
 
 if (jwtValidationErrors.Length > 0)
@@ -154,9 +159,7 @@ builder.Services.AddAuthentication(options =>
                 .CreateLogger("JwtAuthentication")
                 .LogWarning(
                     context.Exception,
-                    "JWT authentication failed for {Method} {Path}",
-                    context.Request.Method,
-                    context.Request.Path);
+                    "JWT authentication failed.");
             return Task.CompletedTask;
         },
         OnChallenge = context =>
@@ -165,9 +168,7 @@ builder.Services.AddAuthentication(options =>
                 .GetRequiredService<ILoggerFactory>()
                 .CreateLogger("JwtAuthentication")
                 .LogWarning(
-                    "JWT challenge triggered for {Method} {Path}. Error={Error}; Description={Description}",
-                    context.Request.Method,
-                    context.Request.Path,
+                    "JWT challenge triggered. Error={Error}; Description={Description}",
                     context.Error,
                     context.ErrorDescription);
             return Task.CompletedTask;
@@ -178,22 +179,16 @@ builder.Services.AddAuthentication(options =>
                 .GetRequiredService<ILoggerFactory>()
                 .CreateLogger("JwtAuthentication")
                 .LogWarning(
-                    "JWT forbidden for authenticated user on {Method} {Path}",
-                    context.Request.Method,
-                    context.Request.Path);
+                    "JWT forbidden for authenticated user.");
             return Task.CompletedTask;
         },
         OnTokenValidated = context =>
         {
-            var userId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             context.HttpContext.RequestServices
                 .GetRequiredService<ILoggerFactory>()
                 .CreateLogger("JwtAuthentication")
                 .LogDebug(
-                    "JWT token validated for UserId={UserId} on {Method} {Path}",
-                    userId,
-                    context.Request.Method,
-                    context.Request.Path);
+                    "JWT token validated successfully.");
             return Task.CompletedTask;
         }
     };
@@ -288,41 +283,24 @@ var app = builder.Build();
 app.UseSerilogRequestLogging();
 
 app.Logger.LogInformation(
-    "Startup configuration diagnostics: ConnectionStringConfigured={ConnectionStringConfigured}, JwtSectionExists={JwtSectionExists}, JwtSecretConfigured={JwtSecretConfigured}, JwtIssuerConfigured={JwtIssuerConfigured}, JwtAudienceConfigured={JwtAudienceConfigured}, JwtExpirationHoursConfigured={JwtExpirationHoursConfigured}, JwtSecretEnvVarPresent={JwtSecretEnvVarPresent}, JwtIssuerEnvVarPresent={JwtIssuerEnvVarPresent}, JwtAudienceEnvVarPresent={JwtAudienceEnvVarPresent}",
+    "Startup diagnostics: ConnectionStringConfigured={ConnectionStringConfigured}, JwtSectionExists={JwtSectionExists}",
     !string.IsNullOrWhiteSpace(connectionString),
-    builder.Configuration.GetSection(JwtSettingsOptions.SectionName).Exists(),
+    builder.Configuration.GetSection(JwtSettingsOptions.SectionName).Exists());
+
+app.Logger.LogInformation(
+    "Startup diagnostics: JwtSecretConfigured={JwtSecretConfigured}, JwtIssuerConfigured={JwtIssuerConfigured}, JwtAudienceConfigured={JwtAudienceConfigured}, JwtExpirationHoursConfigured={JwtExpirationHoursConfigured}",
     !string.IsNullOrWhiteSpace(jwtSettings.Secret),
     !string.IsNullOrWhiteSpace(jwtSettings.Issuer),
     !string.IsNullOrWhiteSpace(jwtSettings.Audience),
-    jwtSettings.ExpirationHours > 0,
+    jwtSettings.ExpirationHours > 0);
+
+app.Logger.LogInformation(
+    "Startup diagnostics: JwtSecretEnvVarPresent={JwtSecretEnvVarPresent}, JwtIssuerEnvVarPresent={JwtIssuerEnvVarPresent}, JwtAudienceEnvVarPresent={JwtAudienceEnvVarPresent}",
     !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable($"{JwtSettingsOptions.SectionName}__Secret")),
     !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable($"{JwtSettingsOptions.SectionName}__Issuer")),
     !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable($"{JwtSettingsOptions.SectionName}__Audience")));
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
-
-app.Use(async (context, next) =>
-{
-    if (!context.Request.Path.StartsWithSegments("/swagger"))
-    {
-        await next();
-        return;
-    }
-
-    try
-    {
-        await next();
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(
-            ex,
-            "Swagger request failed for {Method} {Path}",
-            context.Request.Method,
-            context.Request.Path);
-        throw;
-    }
-});
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>

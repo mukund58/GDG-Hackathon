@@ -1,5 +1,7 @@
 namespace Backend.Data;
 
+using System.Text;
+
 public class JwtSettingsOptions
 {
     public const string SectionName = "JwtSettings";
@@ -13,8 +15,8 @@ public class JwtSettingsOptions
     {
         if (string.IsNullOrWhiteSpace(Secret))
             yield return $"{SectionName}:Secret is required";
-        else if (Secret.Length < 32)
-            yield return $"{SectionName}:Secret must be at least 32 characters";
+        else if (Encoding.UTF8.GetByteCount(Secret) < 32)
+            yield return $"{SectionName}:Secret must be at least 32 bytes when UTF-8 encoded";
 
         if (string.IsNullOrWhiteSpace(Issuer))
             yield return $"{SectionName}:Issuer is required";
