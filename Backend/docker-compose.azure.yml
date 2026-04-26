@@ -5,6 +5,8 @@ services:
     environment:
       CONNECTION_STRING: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       REDIS_CONNECTION_STRING: ${REDIS_CONNECTION_STRING}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL}
+      INVITATION_TOKEN_SECRET: ${INVITATION_TOKEN_SECRET}
     ports:
       - "8080:8080"
     depends_on:

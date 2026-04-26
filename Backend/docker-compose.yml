@@ -9,6 +9,8 @@ services:
     environment:
       CONNECTION_STRING: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       REDIS_CONNECTION_STRING: cache:6379
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
+      INVITATION_TOKEN_SECRET: ${INVITATION_TOKEN_SECRET}
     depends_on:
       db:
         condition: service_healthy
