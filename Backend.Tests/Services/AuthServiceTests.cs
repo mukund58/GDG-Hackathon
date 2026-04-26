@@ -4,7 +4,8 @@ using Backend.Data;
 using Backend.Models.DTOs;
 using Backend.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 public class AuthServiceTests
 {
@@ -86,16 +87,14 @@ public class AuthServiceTests
 
     private static AuthService CreateService(AppDbContext context)
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["JwtSettings:Secret"] = "test-secret-key-that-is-long-enough-for-hmac",
-                ["JwtSettings:Issuer"] = "TestIssuer",
-                ["JwtSettings:Audience"] = "TestAudience",
-                ["JwtSettings:ExpirationHours"] = "24"
-            })
-            .Build();
+        var jwtOptions = Options.Create(new JwtSettingsOptions
+        {
+            Secret = "test-secret-key-that-is-long-enough-for-hmac",
+            Issuer = "TestIssuer",
+            Audience = "TestAudience",
+            ExpirationHours = 24
+        });
 
-        return new AuthService(context, configuration);
+        return new AuthService(context, jwtOptions, NullLogger<AuthService>.Instance);
     }
 }

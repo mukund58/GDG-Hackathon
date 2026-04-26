@@ -18,6 +18,7 @@ using Serilog;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Asp.Versioning;
+using System.Security.Claims;
 
 // Load .env file - try from current directory, ignore if not found
 try
@@ -48,6 +49,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.Configure<SeedingOptions>(builder.Configuration.GetSection("Seeding"));
+builder.Services.Configure<JwtSettingsOptions>(builder.Configuration.GetSection(JwtSettingsOptions.SectionName));
 
 var redisConnectionString =
     Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
@@ -110,9 +112,17 @@ builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // JWT Configuration
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["Secret"] ?? "your-secret-key-change-this-in-production-min-16-chars";
-var key = Encoding.ASCII.GetBytes(secretKey);
+var jwtSettings = builder.Configuration.GetSection(JwtSettingsOptions.SectionName).Get<JwtSettingsOptions>() ?? new JwtSettingsOptions();
+var jwtValidationErrors = jwtSettings.Validate().ToArray();
+
+if (jwtValidationErrors.Length > 0)
+{
+    throw new InvalidOperationException(
+        $"JWT configuration is invalid. Set {JwtSettingsOptions.SectionName} values (or environment variables like {JwtSettingsOptions.SectionName}__Secret). " +
+        $"Errors: {string.Join("; ", jwtValidationErrors)}");
+}
+
+var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -125,10 +135,67 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = false,
-        ValidateAudience = false,
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidateAudience = true,
+        ValidAudience = jwtSettings.Audience,
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero,
+        NameClaimType = ClaimTypes.Name,
+        RoleClaimType = ClaimTypes.Role
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtAuthentication")
+                .LogWarning(
+                    context.Exception,
+                    "JWT authentication failed for {Method} {Path}",
+                    context.Request.Method,
+                    context.Request.Path);
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtAuthentication")
+                .LogWarning(
+                    "JWT challenge triggered for {Method} {Path}. Error={Error}; Description={Description}",
+                    context.Request.Method,
+                    context.Request.Path,
+                    context.Error,
+                    context.ErrorDescription);
+            return Task.CompletedTask;
+        },
+        OnForbidden = context =>
+        {
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtAuthentication")
+                .LogWarning(
+                    "JWT forbidden for authenticated user on {Method} {Path}",
+                    context.Request.Method,
+                    context.Request.Path);
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            var userId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtAuthentication")
+                .LogDebug(
+                    "JWT token validated for UserId={UserId} on {Method} {Path}",
+                    userId,
+                    context.Request.Method,
+                    context.Request.Path);
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -212,11 +279,50 @@ builder.Services.AddSwaggerGen(options =>
             new string[] { }
         }
     });
+
+    options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
 });
 
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
+
+app.Logger.LogInformation(
+    "Startup configuration diagnostics: ConnectionStringConfigured={ConnectionStringConfigured}, JwtSectionExists={JwtSectionExists}, JwtSecretConfigured={JwtSecretConfigured}, JwtIssuerConfigured={JwtIssuerConfigured}, JwtAudienceConfigured={JwtAudienceConfigured}, JwtExpirationHoursConfigured={JwtExpirationHoursConfigured}, JwtSecretEnvVarPresent={JwtSecretEnvVarPresent}, JwtIssuerEnvVarPresent={JwtIssuerEnvVarPresent}, JwtAudienceEnvVarPresent={JwtAudienceEnvVarPresent}",
+    !string.IsNullOrWhiteSpace(connectionString),
+    builder.Configuration.GetSection(JwtSettingsOptions.SectionName).Exists(),
+    !string.IsNullOrWhiteSpace(jwtSettings.Secret),
+    !string.IsNullOrWhiteSpace(jwtSettings.Issuer),
+    !string.IsNullOrWhiteSpace(jwtSettings.Audience),
+    jwtSettings.ExpirationHours > 0,
+    !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable($"{JwtSettingsOptions.SectionName}__Secret")),
+    !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable($"{JwtSettingsOptions.SectionName}__Issuer")),
+    !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable($"{JwtSettingsOptions.SectionName}__Audience")));
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Path.StartsWithSegments("/swagger"))
+    {
+        await next();
+        return;
+    }
+
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(
+            ex,
+            "Swagger request failed for {Method} {Path}",
+            context.Request.Method,
+            context.Request.Path);
+        throw;
+    }
+});
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>
@@ -225,8 +331,6 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseCors("AllowAllOrigins");
-
-app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseIpRateLimiting();
 
