@@ -25,7 +25,14 @@ public class GlobalExceptionMiddleware
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Unhandled exception while processing {Method} {Path}", context.Request.Method, context.Request.Path);
+            if (context.Request.Path.StartsWithSegments("/swagger"))
+            {
+                _logger.LogError(exception, "Unhandled exception while generating Swagger document");
+            }
+            else
+            {
+                _logger.LogError(exception, "Unhandled exception while processing {Method} {Path}", context.Request.Method, context.Request.Path);
+            }
             await HandleExceptionAsync(context, exception);
         }
     }

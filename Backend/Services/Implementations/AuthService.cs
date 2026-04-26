@@ -10,16 +10,19 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
-    private readonly IConfiguration _configuration;
+    private readonly JwtSettingsOptions _jwtSettings;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(AppDbContext context, IConfiguration configuration)
+    public AuthService(AppDbContext context, IOptions<JwtSettingsOptions> jwtSettings, ILogger<AuthService> logger)
     {
         _context = context;
-        _configuration = configuration;
+        _jwtSettings = jwtSettings.Value;
+        _logger = logger;
     }
 
     public async Task<AuthResponseDto> Register(RegisterDto dto)
@@ -95,14 +98,7 @@ public class AuthService : IAuthService
 
     private string GenerateJwtToken(User user)
     {
-        var jwtSettings = _configuration.GetSection("JwtSettings");
-        var secret = jwtSettings["Secret"]
-            ?? Environment.GetEnvironmentVariable("JWT_KEY")
-            ?? "your-secret-key-change-this-in-production";
-        var issuer = jwtSettings["Issuer"] ?? "YourAppName";
-        var audience = jwtSettings["Audience"] ?? "YourAppUsers";
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -114,12 +110,19 @@ public class AuthService : IAuthService
         };
 
         var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(int.Parse(jwtSettings["ExpirationHours"] ?? "24")),
+            expires: DateTime.UtcNow.AddHours(_jwtSettings.ExpirationHours),
             signingCredentials: credentials
         );
+
+        _logger.LogInformation(
+            "Generated JWT token for UserId={UserId} with issuer={Issuer}, audience={Audience}, expirationHours={ExpirationHours}",
+            user.Id,
+            _jwtSettings.Issuer,
+            _jwtSettings.Audience,
+            _jwtSettings.ExpirationHours);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

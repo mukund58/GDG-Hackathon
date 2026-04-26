@@ -18,6 +18,7 @@ using Serilog;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Asp.Versioning;
+using System.Security.Claims;
 
 // Load .env file - try from current directory, ignore if not found
 try
@@ -48,6 +49,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.Configure<SeedingOptions>(builder.Configuration.GetSection("Seeding"));
+builder.Services.Configure<JwtSettingsOptions>(builder.Configuration.GetSection(JwtSettingsOptions.SectionName));
 
 var redisConnectionString =
     Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
@@ -110,9 +112,22 @@ builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // JWT Configuration
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["Secret"] ?? "your-secret-key-change-this-in-production-min-16-chars";
-var key = Encoding.ASCII.GetBytes(secretKey);
+var jwtSettings = builder.Configuration.GetSection(JwtSettingsOptions.SectionName).Get<JwtSettingsOptions>();
+if (jwtSettings is null)
+{
+    throw new InvalidOperationException(
+        $"Unable to bind {JwtSettingsOptions.SectionName} configuration. Verify section shape and environment variable naming.");
+}
+var jwtValidationErrors = jwtSettings.Validate().ToArray();
+
+if (jwtValidationErrors.Length > 0)
+{
+    throw new InvalidOperationException(
+        $"JWT configuration is invalid. Set {JwtSettingsOptions.SectionName} values (or environment variables like {JwtSettingsOptions.SectionName}__Secret). " +
+        $"Errors: {string.Join("; ", jwtValidationErrors)}");
+}
+
+var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -125,10 +140,57 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = false,
-        ValidateAudience = false,
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidateAudience = true,
+        ValidAudience = jwtSettings.Audience,
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero,
+        NameClaimType = ClaimTypes.Name,
+        RoleClaimType = ClaimTypes.Role
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtAuthentication")
+                .LogWarning(
+                    context.Exception,
+                    "JWT authentication failed.");
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtAuthentication")
+                .LogWarning(
+                    "JWT challenge triggered. Error={Error}; Description={Description}",
+                    context.Error,
+                    context.ErrorDescription);
+            return Task.CompletedTask;
+        },
+        OnForbidden = context =>
+        {
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtAuthentication")
+                .LogWarning(
+                    "JWT forbidden for authenticated user.");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtAuthentication")
+                .LogDebug(
+                    "JWT token validated successfully.");
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -212,11 +274,33 @@ builder.Services.AddSwaggerGen(options =>
             new string[] { }
         }
     });
+
+    options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
 });
 
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
+
+app.Logger.LogInformation(
+    "Startup diagnostics: ConnectionStringConfigured={ConnectionStringConfigured}, JwtSectionExists={JwtSectionExists}",
+    !string.IsNullOrWhiteSpace(connectionString),
+    builder.Configuration.GetSection(JwtSettingsOptions.SectionName).Exists());
+
+app.Logger.LogInformation(
+    "Startup diagnostics: JwtSecretConfigured={JwtSecretConfigured}, JwtIssuerConfigured={JwtIssuerConfigured}, JwtAudienceConfigured={JwtAudienceConfigured}, JwtExpirationHoursConfigured={JwtExpirationHoursConfigured}",
+    !string.IsNullOrWhiteSpace(jwtSettings.Secret),
+    !string.IsNullOrWhiteSpace(jwtSettings.Issuer),
+    !string.IsNullOrWhiteSpace(jwtSettings.Audience),
+    jwtSettings.ExpirationHours > 0);
+
+app.Logger.LogInformation(
+    "Startup diagnostics: JwtSecretEnvVarPresent={JwtSecretEnvVarPresent}, JwtIssuerEnvVarPresent={JwtIssuerEnvVarPresent}, JwtAudienceEnvVarPresent={JwtAudienceEnvVarPresent}",
+    !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable($"{JwtSettingsOptions.SectionName}__Secret")),
+    !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable($"{JwtSettingsOptions.SectionName}__Issuer")),
+    !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable($"{JwtSettingsOptions.SectionName}__Audience")));
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>
@@ -225,8 +309,6 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseCors("AllowAllOrigins");
-
-app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseIpRateLimiting();
 
