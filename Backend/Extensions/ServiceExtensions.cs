@@ -21,6 +21,32 @@ namespace Backend.Extensions;
 
 public static class ServiceExtensions
 {
+    public static void AddCorsConfig(this IServiceCollection services)
+    {
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAllOrigins", policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            });
+        });
+    }
+
+    public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration["CONNECTION_STRING"];
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("Database connection string is missing or empty. Ensure the CONNECTION_STRING environment variable is set.");
+        }
+
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseNpgsql(connectionString));
+    }
+
     public static void AddApplicationServices(this IServiceCollection services)
     {
         services.AddScoped<IAuthService, AuthService>();

@@ -10,7 +10,7 @@ using Backend.Services.Interfaces;
 public class SmtpEmailService : IEmailService
 {
     private const string DefaultFromAddress = "hello@mukund.xyz";
-    private const string DefaultFromName = "GDG Taskboard";
+    private const string DefaultFromName = "TaskFlow Taskboard";
     private static readonly HttpClient MailtrapHttpClient = new();
 
     private readonly IConfiguration _configuration;
