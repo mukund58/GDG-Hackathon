@@ -39,6 +39,30 @@ export type ProjectInvitation = {
   expiresAt?: string | null;
 };
 
+export type ProjectInvitationDetails = {
+  id: string;
+  projectId: string;
+  projectName: string;
+  email: string;
+  role: "Admin" | "Member";
+  status: "Pending" | "Accepted" | "Revoked" | "Expired";
+  invitedByUserId: string;
+  invitedByUserName: string;
+  createdAt: string;
+  expiresAt?: string | null;
+  isExpired: boolean;
+};
+
+export type MyProjectInvitation = ProjectInvitationDetails;
+
+export type AcceptProjectInvitationResult = {
+  invitationId: string;
+  projectId: string;
+  projectName: string;
+  role: "Admin" | "Member";
+  status: "Accepted";
+};
+
 export type CreateProjectInvitationInput = {
   email: string;
   role: "Admin" | "Member";

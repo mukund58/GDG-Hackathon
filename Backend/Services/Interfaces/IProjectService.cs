@@ -19,4 +19,7 @@ public interface IProjectService
     Task<ProjectMemberDto> AddMember(Guid projectId, AddProjectMemberDto dto, Guid actorUserId);
     Task<List<ProjectInvitationDto>> GetInvitations(Guid projectId);
     Task<ProjectInvitationDto> CreateInvitation(Guid projectId, CreateProjectInvitationDto dto, Guid actorUserId);
+    Task<List<ProjectInvitationLookupDto>> GetInvitationsForUser(Guid userId);
+    Task<ProjectInvitationLookupDto> GetInvitationById(Guid invitationId);
+    Task<AcceptProjectInvitationResultDto> AcceptInvitation(Guid invitationId, Guid actorUserId);
 }

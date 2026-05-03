@@ -174,6 +174,58 @@ public class ProjectController : ControllerBase
         }
     }
 
+    [HttpGet("invitations/me")]
+    [Authorize(Policy = "ProjectRead")]
+    public async Task<IActionResult> GetMyInvitations()
+    {
+        try
+        {
+            var invitations = await _service.GetInvitationsForUser(GetCurrentUserId());
+            return Ok(ApiResponseDto<List<ProjectInvitationLookupDto>>.Ok(invitations, "User invitations retrieved"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponseDto<object>.Fail(ex.Message));
+        }
+    }
+
+    [AllowAnonymous]
+    [HttpGet("invitations/{invitationId:guid}")]
+    public async Task<IActionResult> GetInvitationById(Guid invitationId)
+    {
+        try
+        {
+            var invitation = await _service.GetInvitationById(invitationId);
+            return Ok(ApiResponseDto<ProjectInvitationLookupDto>.Ok(invitation, "Invitation retrieved"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponseDto<object>.Fail(ex.Message));
+        }
+    }
+
+    [HttpPost("invitations/{invitationId:guid}/accept")]
+    public async Task<IActionResult> AcceptInvitation(Guid invitationId)
+    {
+        try
+        {
+            var accepted = await _service.AcceptInvitation(invitationId, GetCurrentUserId());
+            return Ok(ApiResponseDto<AcceptProjectInvitationResultDto>.Ok(accepted, "Invitation accepted"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponseDto<object>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponseDto<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponseDto<object>.Fail(ex.Message));
+        }
+    }
+
     private bool HasElevatedAccess()
     {
         return User.IsInRole("Admin");

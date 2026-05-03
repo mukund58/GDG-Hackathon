@@ -7,7 +7,8 @@ public interface IEmailService
         string projectName,
         string inviterName,
         string role,
-        DateTime expiresAt);
+        DateTime expiresAt,
+        string? invitationUrl = null);
 
     Task SendTaskMentionEmail(
         string recipientEmail,

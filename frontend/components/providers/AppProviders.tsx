@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import { getAuthToken, clearAuthToken } from "@/services/auth/token-store";
@@ -9,9 +9,14 @@ import { getSessionUserFromToken, isTokenExpired } from "@/lib/auth/jwt";
 import { useAuthStore } from "@/store/authStore";
 
 const protectedPrefixes = ["/dashboard", "/tasks", "/task", "/projects", "/settings"];
+const protectedExactPaths = ["/invitations"];
 const authPrefixes = ["/auth/login", "/auth/register"];
 
 function isProtectedPath(pathname: string) {
+  if (protectedExactPaths.includes(pathname)) {
+    return true;
+  }
+
   return protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
@@ -19,9 +24,24 @@ function isAuthPath(pathname: string) {
   return authPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
+function resolveSafeRedirect(rawRedirect: string | null) {
+  if (!rawRedirect) {
+    return null;
+  }
+
+  if (!rawRedirect.startsWith("/") || rawRedirect.startsWith("//")) {
+    return null;
+  }
+
+  return rawRedirect;
+}
+
 function RouteGuard() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchParamsString = searchParams.toString();
+  const redirectParam = searchParams.get("redirect");
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const setSession = useAuthStore((state) => state.setSessionFromToken);
   const clearSession = useAuthStore((state) => state.clearSession);
@@ -63,14 +83,18 @@ function RouteGuard() {
         return;
       }
 
-      router.replace("/auth/login");
+      const search = searchParamsString;
+      const currentPath = search ? `${pathname}?${search}` : pathname;
+      const redirectQuery = new URLSearchParams({ redirect: currentPath });
+      router.replace(`/auth/login?${redirectQuery.toString()}`);
       return;
     }
 
     if (isAuthPath(pathname) && isAuthenticated) {
-      router.replace("/dashboard");
+      const redirectTarget = resolveSafeRedirect(redirectParam);
+      router.replace(redirectTarget ?? "/dashboard");
     }
-  }, [pathname, isAuthenticated, router]);
+  }, [pathname, searchParamsString, redirectParam, isAuthenticated, router]);
 
   return null;
 }

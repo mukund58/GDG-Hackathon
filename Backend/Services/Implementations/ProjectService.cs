@@ -11,14 +11,20 @@ public class ProjectService : IProjectService
     private const string ProjectAdminRole = "Admin";
     private const string ProjectMemberRole = "Member";
     private const string PendingInvitationStatus = "Pending";
+    private const string AcceptedInvitationStatus = "Accepted";
+    private const string RevokedInvitationStatus = "Revoked";
+    private const string ExpiredInvitationStatus = "Expired";
+    private const string DefaultFrontendBaseUrl = "http://localhost:3001";
 
     private readonly AppDbContext _context;
     private readonly IEmailService? _emailService;
+    private readonly IConfiguration? _configuration;
 
-    public ProjectService(AppDbContext context, IEmailService? emailService = null)
+    public ProjectService(AppDbContext context, IEmailService? emailService = null, IConfiguration? configuration = null)
     {
         _context = context;
         _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<List<Project>> GetAll()
@@ -313,16 +319,6 @@ public class ProjectService : IProjectService
         if (hasPendingInvite)
             throw new InvalidOperationException("A pending invitation already exists for this email");
 
-        if (_emailService != null)
-        {
-            await _emailService.SendProjectInvitationEmail(
-                email,
-                project.Name,
-                invitedByName ?? "Project Admin",
-                role,
-                expiresAt);
-        }
-
         var invitation = new ProjectInvitation
         {
             Id = Guid.NewGuid(),
@@ -334,6 +330,19 @@ public class ProjectService : IProjectService
             CreatedAt = now,
             ExpiresAt = expiresAt
         };
+
+        var invitationUrl = BuildInvitationUrl(invitation.Id);
+
+        if (_emailService != null)
+        {
+            await _emailService.SendProjectInvitationEmail(
+                email,
+                project.Name,
+                invitedByName ?? "Project Admin",
+                role,
+                expiresAt,
+                invitationUrl);
+        }
 
         _context.ProjectInvitations.Add(invitation);
 
@@ -364,6 +373,171 @@ public class ProjectService : IProjectService
         };
     }
 
+    public async Task<List<ProjectInvitationLookupDto>> GetInvitationsForUser(Guid userId)
+    {
+        var userEmail = await _context.Users
+            .AsNoTracking()
+            .Where(user => user.Id == userId && !user.IsDeleted)
+            .Select(user => user.Email)
+            .FirstOrDefaultAsync()
+            ?? throw new KeyNotFoundException("User not found");
+
+        var normalizedEmail = NormalizeEmail(userEmail);
+
+        var rows = await _context.ProjectInvitations
+            .AsNoTracking()
+            .Where(pi => pi.Email == normalizedEmail)
+            .Select(pi => new
+            {
+                Invitation = pi,
+                ProjectName = _context.Projects
+                    .Where(project => project.Id == pi.ProjectId)
+                    .Select(project => project.Name)
+                    .FirstOrDefault(),
+                InvitedByUserName = _context.Users
+                    .Where(user => user.Id == pi.InvitedByUserId)
+                    .Select(user => user.Name)
+                    .FirstOrDefault()
+            })
+            .OrderByDescending(row => row.Invitation.CreatedAt)
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+
+        return rows
+            .Where(row => !string.IsNullOrWhiteSpace(row.ProjectName))
+            .Select(row => new ProjectInvitationLookupDto
+            {
+                Id = row.Invitation.Id,
+                ProjectId = row.Invitation.ProjectId,
+                ProjectName = row.ProjectName!,
+                Email = row.Invitation.Email,
+                Role = row.Invitation.Role,
+                Status = row.Invitation.Status,
+                InvitedByUserId = row.Invitation.InvitedByUserId,
+                InvitedByUserName = row.InvitedByUserName ?? "Project Admin",
+                CreatedAt = row.Invitation.CreatedAt,
+                ExpiresAt = row.Invitation.ExpiresAt,
+                IsExpired = IsInvitationExpired(row.Invitation, now)
+            })
+            .ToList();
+    }
+
+    public async Task<ProjectInvitationLookupDto> GetInvitationById(Guid invitationId)
+    {
+        var row = await _context.ProjectInvitations
+            .AsNoTracking()
+            .Where(pi => pi.Id == invitationId)
+            .Select(pi => new
+            {
+                Invitation = pi,
+                ProjectName = _context.Projects
+                    .Where(project => project.Id == pi.ProjectId)
+                    .Select(project => project.Name)
+                    .FirstOrDefault(),
+                InvitedByUserName = _context.Users
+                    .Where(user => user.Id == pi.InvitedByUserId)
+                    .Select(user => user.Name)
+                    .FirstOrDefault()
+            })
+            .FirstOrDefaultAsync();
+
+        if (row == null)
+            throw new KeyNotFoundException("Invitation not found");
+
+        if (string.IsNullOrWhiteSpace(row.ProjectName))
+            throw new KeyNotFoundException("Project not found");
+
+        var now = DateTime.UtcNow;
+        var isExpired = IsInvitationExpired(row.Invitation, now);
+
+        return new ProjectInvitationLookupDto
+        {
+            Id = row.Invitation.Id,
+            ProjectId = row.Invitation.ProjectId,
+            ProjectName = row.ProjectName,
+            Email = row.Invitation.Email,
+            Role = row.Invitation.Role,
+            Status = row.Invitation.Status,
+            InvitedByUserId = row.Invitation.InvitedByUserId,
+            InvitedByUserName = row.InvitedByUserName ?? "Project Admin",
+            CreatedAt = row.Invitation.CreatedAt,
+            ExpiresAt = row.Invitation.ExpiresAt,
+            IsExpired = isExpired
+        };
+    }
+
+    public async Task<AcceptProjectInvitationResultDto> AcceptInvitation(Guid invitationId, Guid actorUserId)
+    {
+        var invitation = await _context.ProjectInvitations
+            .FirstOrDefaultAsync(pi => pi.Id == invitationId)
+            ?? throw new KeyNotFoundException("Invitation not found");
+
+        var now = DateTime.UtcNow;
+        if (IsInvitationExpired(invitation, now))
+        {
+            if (string.Equals(invitation.Status, PendingInvitationStatus, StringComparison.OrdinalIgnoreCase))
+            {
+                invitation.Status = ExpiredInvitationStatus;
+                await _context.SaveChangesAsync();
+            }
+
+            throw new InvalidOperationException("Invitation has expired");
+        }
+
+        if (string.Equals(invitation.Status, RevokedInvitationStatus, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Invitation has been revoked");
+
+        if (!string.Equals(invitation.Status, PendingInvitationStatus, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(invitation.Status, AcceptedInvitationStatus, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Invitation is in '{invitation.Status}' state and cannot be accepted");
+
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == actorUserId && !u.IsDeleted)
+            ?? throw new KeyNotFoundException("User not found");
+
+        if (!string.Equals(user.Email.Trim(), invitation.Email, StringComparison.OrdinalIgnoreCase))
+            throw new UnauthorizedAccessException("This invitation belongs to a different email account");
+
+        var project = await _context.Projects
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == invitation.ProjectId)
+            ?? throw new KeyNotFoundException("Project not found");
+
+        var isProjectOwner = project.OwnerUserId == actorUserId;
+
+        var existingMembership = await _context.ProjectMembers
+            .FirstOrDefaultAsync(pm => pm.ProjectId == invitation.ProjectId && pm.UserId == actorUserId);
+
+        var acceptedRole = NormalizeInvitationRole(invitation.Role);
+
+        if (!isProjectOwner && existingMembership == null)
+        {
+            existingMembership = new ProjectMember
+            {
+                ProjectId = invitation.ProjectId,
+                UserId = actorUserId,
+                Role = acceptedRole,
+                AddedByUserId = invitation.InvitedByUserId,
+                AddedAt = now
+            };
+
+            _context.ProjectMembers.Add(existingMembership);
+        }
+
+        invitation.Status = AcceptedInvitationStatus;
+        await _context.SaveChangesAsync();
+
+        return new AcceptProjectInvitationResultDto
+        {
+            InvitationId = invitation.Id,
+            ProjectId = invitation.ProjectId,
+            ProjectName = project.Name,
+            Role = isProjectOwner ? ProjectAdminRole : (existingMembership?.Role ?? acceptedRole),
+            Status = invitation.Status
+        };
+    }
+
     private async Task<User> ResolveMemberUserAsync(AddProjectMemberDto dto)
     {
         if (dto.UserId.HasValue)
@@ -387,6 +561,42 @@ public class ProjectService : IProjectService
             throw new KeyNotFoundException("User not found. Send an invitation instead");
 
         return byEmail;
+    }
+
+    private static string NormalizeInvitationRole(string? role)
+    {
+        var candidate = role?.Trim() ?? string.Empty;
+
+        if (candidate.Equals(ProjectAdminRole, StringComparison.OrdinalIgnoreCase))
+            return ProjectAdminRole;
+
+        return ProjectMemberRole;
+    }
+
+    private static bool IsInvitationExpired(ProjectInvitation invitation, DateTime now)
+    {
+        return invitation.ExpiresAt.HasValue && invitation.ExpiresAt.Value <= now;
+    }
+
+    private string BuildInvitationUrl(Guid invitationId)
+    {
+        var frontendBaseUrl = GetFrontendBaseUrl();
+        return $"{frontendBaseUrl}/invitations/{invitationId}";
+    }
+
+    private string GetFrontendBaseUrl()
+    {
+        var configuredBaseUrl = Environment.GetEnvironmentVariable("FRONTEND_BASE_URL")
+            ?? _configuration?["App:FrontendBaseUrl"]
+            ?? _configuration?["Frontend:BaseUrl"]
+            ?? DefaultFrontendBaseUrl;
+
+        var trimmed = (configuredBaseUrl ?? DefaultFrontendBaseUrl).Trim().TrimEnd('/');
+
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out _))
+            return trimmed;
+
+        return DefaultFrontendBaseUrl;
     }
 
     private static string NormalizeRole(string role)

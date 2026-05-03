@@ -339,6 +339,166 @@ public class ProjectServiceTests
         Assert.NotNull(persisted);
     }
 
+    [Fact]
+    public async Task GetInvitationsForUser_ReturnsOnlyInvitationsForCurrentUserEmail()
+    {
+        await using var context = CreateContext();
+
+        var ownerUserId = Guid.NewGuid();
+        var inviteeUserId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+
+        context.Users.AddRange(
+            new User { Id = ownerUserId, Name = "Owner", Email = "owner@example.com", PasswordHash = "hash", Role = "User" },
+            new User { Id = inviteeUserId, Name = "Invitee", Email = "Invitee@Example.com", PasswordHash = "hash", Role = "User" },
+            new User { Id = otherUserId, Name = "Other", Email = "other@example.com", PasswordHash = "hash", Role = "User" });
+
+        var projectForInvitee = new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = "Invitee Project",
+            Description = "Project for invitee",
+            OwnerUserId = ownerUserId
+        };
+
+        var projectForOtherUser = new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = "Other Project",
+            Description = "Project for someone else",
+            OwnerUserId = ownerUserId
+        };
+
+        context.Projects.AddRange(projectForInvitee, projectForOtherUser);
+        context.ProjectInvitations.AddRange(
+            new ProjectInvitation
+            {
+                Id = Guid.NewGuid(),
+                ProjectId = projectForInvitee.Id,
+                Email = "invitee@example.com",
+                Role = "Member",
+                Status = "Pending",
+                InvitedByUserId = ownerUserId,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            },
+            new ProjectInvitation
+            {
+                Id = Guid.NewGuid(),
+                ProjectId = projectForOtherUser.Id,
+                Email = "other@example.com",
+                Role = "Member",
+                Status = "Pending",
+                InvitedByUserId = ownerUserId,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            });
+
+        await context.SaveChangesAsync();
+
+        var service = new ProjectService(context);
+        var invitations = await service.GetInvitationsForUser(inviteeUserId);
+
+        var invitation = Assert.Single(invitations);
+        Assert.Equal(projectForInvitee.Id, invitation.ProjectId);
+        Assert.Equal("invitee@example.com", invitation.Email);
+        Assert.Equal("Owner", invitation.InvitedByUserName);
+        Assert.False(invitation.IsExpired);
+    }
+
+    [Fact]
+    public async Task AcceptInvitation_AddsMemberAndMarksInvitationAccepted()
+    {
+        await using var context = CreateContext();
+
+        var ownerUserId = Guid.NewGuid();
+        var inviteeUserId = Guid.NewGuid();
+        var invitationId = Guid.NewGuid();
+
+        context.Users.AddRange(
+            new User { Id = ownerUserId, Name = "Owner", Email = "owner@example.com", PasswordHash = "hash", Role = "User" },
+            new User { Id = inviteeUserId, Name = "Invitee", Email = "invitee@example.com", PasswordHash = "hash", Role = "User" });
+
+        var project = new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = "Invite Acceptance",
+            Description = "Acceptance test",
+            OwnerUserId = ownerUserId
+        };
+
+        context.Projects.Add(project);
+        context.ProjectInvitations.Add(new ProjectInvitation
+        {
+            Id = invitationId,
+            ProjectId = project.Id,
+            Email = "invitee@example.com",
+            Role = "Member",
+            Status = "Pending",
+            InvitedByUserId = ownerUserId,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        });
+
+        await context.SaveChangesAsync();
+
+        var service = new ProjectService(context);
+
+        var accepted = await service.AcceptInvitation(invitationId, inviteeUserId);
+
+        Assert.Equal(project.Id, accepted.ProjectId);
+        Assert.Equal("Accepted", accepted.Status);
+
+        var membership = await context.ProjectMembers
+            .SingleOrDefaultAsync(pm => pm.ProjectId == project.Id && pm.UserId == inviteeUserId);
+        Assert.NotNull(membership);
+        Assert.Equal("Member", membership!.Role);
+
+        var invitation = await context.ProjectInvitations.SingleAsync(pi => pi.Id == invitationId);
+        Assert.Equal("Accepted", invitation.Status);
+    }
+
+    [Fact]
+    public async Task AcceptInvitation_WithDifferentUserEmail_ThrowsUnauthorized()
+    {
+        await using var context = CreateContext();
+
+        var ownerUserId = Guid.NewGuid();
+        var inviteeUserId = Guid.NewGuid();
+        var invitationId = Guid.NewGuid();
+
+        context.Users.AddRange(
+            new User { Id = ownerUserId, Name = "Owner", Email = "owner@example.com", PasswordHash = "hash", Role = "User" },
+            new User { Id = inviteeUserId, Name = "Different User", Email = "other@example.com", PasswordHash = "hash", Role = "User" });
+
+        var project = new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = "Invite Rejection",
+            Description = "Wrong account test",
+            OwnerUserId = ownerUserId
+        };
+
+        context.Projects.Add(project);
+        context.ProjectInvitations.Add(new ProjectInvitation
+        {
+            Id = invitationId,
+            ProjectId = project.Id,
+            Email = "invitee@example.com",
+            Role = "Member",
+            Status = "Pending",
+            InvitedByUserId = ownerUserId,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        });
+
+        await context.SaveChangesAsync();
+
+        var service = new ProjectService(context);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.AcceptInvitation(invitationId, inviteeUserId));
+    }
+
     private static AppDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

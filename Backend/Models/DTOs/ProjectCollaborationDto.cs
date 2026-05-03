@@ -35,3 +35,27 @@ public class ProjectInvitationDto
     public DateTime CreatedAt { get; set; }
     public DateTime? ExpiresAt { get; set; }
 }
+
+public class ProjectInvitationLookupDto
+{
+    public Guid Id { get; set; }
+    public Guid ProjectId { get; set; }
+    public string ProjectName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = "Member";
+    public string Status { get; set; } = "Pending";
+    public Guid InvitedByUserId { get; set; }
+    public string InvitedByUserName { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public bool IsExpired { get; set; }
+}
+
+public class AcceptProjectInvitationResultDto
+{
+    public Guid InvitationId { get; set; }
+    public Guid ProjectId { get; set; }
+    public string ProjectName { get; set; } = string.Empty;
+    public string Role { get; set; } = "Member";
+    public string Status { get; set; } = "Accepted";
+}

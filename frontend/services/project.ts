@@ -1,10 +1,13 @@
 import { apiClient } from "@/services/api/client";
 import type { ApiResponse } from "@/types/api";
 import type {
+  AcceptProjectInvitationResult,
   AddProjectMemberInput,
   CreateProjectInput,
   CreateProjectInvitationInput,
+  MyProjectInvitation,
   Project,
+  ProjectInvitationDetails,
   ProjectInvitation,
   ProjectMember,
 } from "@/types/project";
@@ -61,6 +64,37 @@ export async function createProjectInvitation(projectId: string, payload: Create
   const response = await apiClient.post<ApiResponse<ProjectInvitation>>(
     `/api/projects/${projectId}/invitations`,
     payload,
+    {
+      auth: true,
+    },
+  );
+
+  return response.data;
+}
+
+export async function getProjectInvitationById(invitationId: string) {
+  const response = await apiClient.get<ApiResponse<ProjectInvitationDetails>>(
+    `/api/projects/invitations/${invitationId}`,
+  );
+
+  return response.data;
+}
+
+export async function getMyProjectInvitations() {
+  const response = await apiClient.get<ApiResponse<MyProjectInvitation[]>>(
+    "/api/projects/invitations/me",
+    {
+      auth: true,
+    },
+  );
+
+  return response.data;
+}
+
+export async function acceptProjectInvitation(invitationId: string) {
+  const response = await apiClient.post<ApiResponse<AcceptProjectInvitationResult>>(
+    `/api/projects/invitations/${invitationId}/accept`,
+    {},
     {
       auth: true,
     },

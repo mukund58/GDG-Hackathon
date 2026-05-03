@@ -174,7 +174,8 @@ public class TaskAttachmentController : ControllerBase
     /// </summary>
     [HttpPost("upload")]
     [Authorize(Policy = "TaskWrite")]
-    public async Task<IActionResult> UploadAttachment(Guid taskId, [FromForm] IFormFile file)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadAttachment(Guid taskId, IFormFile file)
     {
         try
         {

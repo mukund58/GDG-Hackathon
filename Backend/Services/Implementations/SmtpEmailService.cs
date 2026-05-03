@@ -25,9 +25,14 @@ public class SmtpEmailService : IEmailService
         string projectName,
         string inviterName,
         string role,
-        DateTime expiresAt)
+        DateTime expiresAt,
+        string? invitationUrl = null)
     {
         var subject = $"You are invited to join {projectName}";
+
+        var invitationActionLine = string.IsNullOrWhiteSpace(invitationUrl)
+            ? "Please sign in to your account and open the project dashboard to access this invitation."
+            : $"Accept your invitation: {invitationUrl}";
 
         var body = $@"Hello,
 
@@ -35,7 +40,9 @@ public class SmtpEmailService : IEmailService
 
     Invitation expiry: {expiresAt:yyyy-MM-dd HH:mm} UTC
 
-    Please sign in to your account and open the project dashboard to access this invitation.
+    {invitationActionLine}
+
+    If you do not have an account yet, register first and then return to the invitation link.
 
     - GDG Taskboard";
 

@@ -1,20 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { login } from "@/services/auth";
 
+function resolveSafeRedirect(rawRedirect: string | null) {
+  if (!rawRedirect) {
+    return null;
+  }
+
+  if (!rawRedirect.startsWith("/") || rawRedirect.startsWith("//")) {
+    return null;
+  }
+
+  return rawRedirect;
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const redirectTarget = resolveSafeRedirect(searchParams.get("redirect"));
+  const registerHref = useMemo(() => {
+    if (!redirectTarget) {
+      return "/auth/register";
+    }
+
+    const query = new URLSearchParams({ redirect: redirectTarget });
+    return `/auth/register?${query.toString()}`;
+  }, [redirectTarget]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -23,7 +46,7 @@ export default function LoginPage() {
       setError(null);
       setIsLoading(true);
       await login({ email, password });
-      router.push("/dashboard");
+      router.push(redirectTarget ?? "/dashboard");
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : "Unable to login";
       setError(message);
@@ -74,7 +97,7 @@ export default function LoginPage() {
 
           <p className="text-sm text-muted-foreground">
             New here?{" "}
-            <Link className="font-semibold text-primary hover:underline" href="/auth/register">
+            <Link className="font-semibold text-primary hover:underline" href={registerHref}>
               Create account
             </Link>
           </p>
